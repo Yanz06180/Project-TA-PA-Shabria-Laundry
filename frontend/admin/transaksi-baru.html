@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transaksi Baru — Admin Shabria Laundry</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <style>
+    .page-inner   { padding: 28px 32px; max-width: 860px; margin: 0 auto; }
+    .step-header  { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .step-dot     { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+    .step-line    { flex: 1; height: 2px; border-radius: 2px; }
+
+    .step-panel   { display: none; }
+    .step-panel.active { display: block; }
+
+    .customer-option, .layanan-option {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border-radius: 14px;
+      border: 2px solid transparent;
+      background: white; cursor: pointer;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+      margin-bottom: 10px; width: 100%;
+      text-align: left; transition: all 0.15s;
+    }
+    .customer-option:hover, .layanan-option:hover { border-color: #BFDBFE; }
+    .customer-option.selected, .layanan-option.selected {
+      border-color: #1565C0; background: #EFF6FF;
+    }
+    .check-circle {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid #E5E7EB; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .check-circle.checked { background: #1565C0; border-color: #1565C0; color: white; }
+
+    .cat-pill { height: 40px; padding: 0 16px; border-radius: 10px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; white-space: nowrap; flex-shrink: 0; background: #E5E7EB; color: #374151; transition: all 0.15s; }
+    .cat-pill.active { background: #1565C0; color: white; font-weight: 700; box-shadow: 0 2px 8px rgba(21,101,192,0.3); }
+
+    .qty-control { display: flex; align-items: center; gap: 16px; }
+    .qty-btn { width: 44px; height: 44px; border-radius: 12px; background: #EFF6FF; border: none; cursor: pointer; font-size: 22px; font-weight: 700; color: #1565C0; }
+
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 14px; }
+    .summary-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div id="app" style="display:flex; height:100vh; overflow:hidden; background:#F0F7FF;">
+    <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0;"></div>
+    <div id="overlay" onclick="closeSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:198;"></div>
+    <div id="mobileSidebar" style="display:none; position:fixed; top:0; left:0; bottom:0; width:260px; z-index:199;"></div>
+
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+      <header id="topHeader"></header>
+
+      <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
+        <div class="page-inner">
+
+          <!-- Back + Title -->
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+            <a href="transaksi.html" style="width:38px; height:38px; border-radius:10px; background:#EFF6FF; border:1.5px solid #BFDBFE; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:18px;">←</a>
+            <div>
+              <h1 style="font-size:22px; font-weight:900; color:#111827;">Transaksi Baru</h1>
+              <p id="stepLabel" style="font-size:13px; color:#9CA3AF;">Langkah 1 dari 4</p>
+            </div>
+          </div>
+
+          <!-- Step indicator -->
+          <div class="step-header" id="stepIndicator" style="margin-bottom:28px;"></div>
+
+          <!-- Step 0: Pilih Customer -->
+          <div class="step-panel active" id="step0">
+            <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:14px;">Pilih Customer</h2>
+            <div class="search-bar" style="margin-bottom:16px;">
+              <span>🔍</span>
+              <input type="text" id="customerSearch" placeholder="Cari nama atau nomor telepon..."
+                oninput="filterCustomerOptions()" />
+            </div>
+            <div id="customerOptions">
+              <p style="text-align:center; color:#9CA3AF; padding:30px 0;">Memuat...</p>
+            </div>
+          </div>
+
+          <!-- Step 1: Pilih Layanan -->
+          <div class="step-panel" id="step1">
+            <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:14px;">Pilih Layanan</h2>
+
+            <!-- Type toggle -->
+            <div style="display:flex; gap:8px; padding:6px; background:#E8F0FE; border-radius:16px; margin-bottom:14px;">
+              <button onclick="switchType('kiloan')" id="btnKiloan"
+                style="flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:800; background:white; color:#1565C0; box-shadow:0 2px 8px rgba(21,101,192,0.15);">
+                ⚖️ Kiloan
+              </button>
+              <button onclick="switchType('satuan')" id="btnSatuan"
+                style="flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:#6B7280;">
+                🧩 Satuan
+              </button>
+            </div>
+
+            <!-- Sub-category pills -->
+            <div class="pill-row" id="catPills" style="margin-bottom:16px;"></div>
+
+            <!-- Layanan list -->
+            <div id="layananOptions" style="margin-bottom:16px;"></div>
+
+            <!-- Qty / Berat input -->
+            <div id="qtySection" style="display:none; background:white; border-radius:18px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border:1.5px solid #BFDBFE; margin-bottom:12px;">
+              <p id="qtyLabel" style="font-size:14px; font-weight:700; color:#374151; margin-bottom:16px;">Estimasi Berat</p>
+              <div class="qty-control" style="justify-content:center; margin-bottom:16px;">
+                <button class="qty-btn" onclick="changeQty(-1)">−</button>
+                <div style="text-align:center; min-width:100px;">
+                  <p id="qtyDisplay" style="font-size:28px; font-weight:900; color:#111827;">1 kg</p>
+                  <p id="qtyPrice"   style="font-size:13px; font-weight:700; color:#1565C0;">= Rp 0</p>
+                </div>
+                <button class="qty-btn" onclick="changeQty(1)">+</button>
+              </div>
+              <textarea id="catatanInput" placeholder="Catatan (opsional)..." rows="2"
+                style="width:100%; resize:none; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:12px; padding:10px 14px; font-size:13px; outline:none;"></textarea>
+            </div>
+
+            <!-- Cart -->
+            <div id="cartSection" style="display:none;"></div>
+          </div>
+
+          <!-- Step 2: Tambahan & Antar Jemput -->
+          <div class="step-panel" id="step2">
+            <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:12px 16px; display:flex; gap:10px; align-items:flex-start; margin-bottom:20px;">
+              <span>💡</span>
+              <p style="font-size:12px; color:#1565C0; font-weight:600;">Semua pilihan di halaman ini bersifat opsional.</p>
+            </div>
+            <h3 style="font-size:15px; font-weight:800; color:#111827; margin-bottom:12px;">Tambahan</h3>
+            <div id="tambahanOptions" style="margin-bottom:20px;"></div>
+            <hr style="border:none; border-top:1px solid #E5E7EB; margin-bottom:20px;" />
+            <h3 style="font-size:15px; font-weight:800; color:#111827; margin-bottom:12px;">Antar Jemput</h3>
+            <div id="antarJemputOptions"></div>
+            <div id="extraSummary" style="display:none; background:#F8FAFF; border:1.5px solid #BFDBFE; border-radius:16px; padding:14px 16px; margin-top:16px;"></div>
+          </div>
+
+          <!-- Step 3: Pembayaran -->
+          <div class="step-panel" id="step3">
+            <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:16px;">Pilih Metode Pembayaran</h2>
+            <div id="payOptions" style="margin-bottom:20px;"></div>
+            <div class="card">
+              <div class="card-header">Ringkasan Order</div>
+              <div style="padding:16px 20px;" id="orderSummary"></div>
+            </div>
+          </div>
+
+          <!-- Step 4: Success -->
+          <div class="step-panel" id="step4" style="text-align:center; padding:40px 20px;">
+            <div style="width:90px; height:90px; border-radius:50%; background:#DCFCE7; display:flex; align-items:center; justify-content:center; font-size:50px; margin:0 auto 20px;">✅</div>
+            <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:8px;">Transaksi Berhasil!</h2>
+            <p style="font-size:14px; color:#6B7280; margin-bottom:24px;">Data transaksi telah disimpan</p>
+            <div id="successCard" class="card" style="text-align:left; max-width:480px; margin:0 auto 24px;"></div>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+              <a href="transaksi.html" class="btn btn-primary">Lihat Daftar Transaksi</a>
+              <a href="dashboard.html" class="btn btn-ghost">Kembali ke Dashboard</a>
+            </div>
+          </div>
+
+          <!-- Nav buttons -->
+          <div id="navBtns" style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid #E5E7EB;">
+            <button onclick="prevStep()" id="btnBack" style="display:none;" class="btn btn-ghost">← Kembali</button>
+            <button onclick="nextStep()" id="btnNext" class="btn btn-primary" disabled>Lanjut →</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    /* ── State ── */
+    let currentStep   = 0;
+    const TOTAL_STEPS = 4;
+    let customers     = [];
+    let layananAll    = [];
+    let addons        = [];
+    let currentUser   = null;
+
+    let selectedCustomer  = null;
+    let cart              = [];          // [{layananId, nama, harga, qty, isKiloan, catatan}]
+    let selectedTambahan  = new Set();
+    let selectedAntar     = new Set();
+    let metodePembayaran  = null;
+    let tipeLayanan       = 'kiloan';
+    let subKategori       = 'Cuci Komplit';
+    let pendingLayanan    = null;        // layanan yg sedang dikonfigurasi
+    let pendingQty        = 1;
+
+    const KILOAN_SUB = ['Cuci Komplit','Cuci Lipat','Setrika Saja','Cuci Kering'];
+    const SATUAN_SUB = ['Pakaian','Bedding/Selimut','Sepatu & Tas','Boneka'];
+
+    const SATUAN_FILTER = {
+      'Pakaian':        l => l.jenis_nama === 'Pakaian Satuan',
+      'Bedding/Selimut':l => l.lay_nama.toLowerCase().includes('bedcover') || l.lay_nama.toLowerCase().includes('selimut'),
+      'Sepatu & Tas':   l => l.lay_nama.toLowerCase().includes('sepatu'),
+      'Boneka':         l => l.lay_nama.toLowerCase().includes('boneka'),
+    };
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth(['admin']);
+      initAdminLayout(currentUser, 'transaksi');
+      updateStepUI();
+
+      [customers, layananAll, addons] = await Promise.all([
+        api.pelanggan.all(),
+        api.layanan.all(),
+        api.addon.all(),
+      ]);
+
+      renderCustomerOptions(customers);
+      renderAddons();
+      renderPayOptions();
+    });
+
+    /* ── Step navigation ── */
+    function updateStepUI() {
+      const steps = ['Customer','Layanan','Tambahan','Pembayaran'];
+      document.getElementById('stepLabel').textContent =
+        `Langkah ${currentStep + 1} dari ${TOTAL_STEPS}`;
+
+      /* Indicator */
+      document.getElementById('stepIndicator').innerHTML = steps.map((s, i) => `
+        <div class="step-dot" style="background:${i <= currentStep ? '#1565C0':'#E5E7EB'}; color:${i <= currentStep ? 'white':'#9CA3AF'};">
+          ${i < currentStep ? '✓' : i + 1}
+        </div>
+        ${i < steps.length - 1 ? `<div class="step-line" style="background:${i < currentStep ? '#1565C0':'#E5E7EB'};"></div>` : ''}
+      `).join('');
+
+      /* Panels */
+      for (let i = 0; i < TOTAL_STEPS; i++) {
+        const p = document.getElementById(`step${i}`);
+        if (p) p.classList.toggle('active', i === currentStep);
+      }
+
+      /* Buttons */
+      const btnBack = document.getElementById('btnBack');
+      const btnNext = document.getElementById('btnNext');
+      const navBtns = document.getElementById('navBtns');
+
+      btnBack.style.display = currentStep > 0 ? 'inline-flex' : 'none';
+      navBtns.style.display = currentStep === TOTAL_STEPS ? 'none' : 'flex';
+
+      if (currentStep === TOTAL_STEPS - 1) {
+        btnNext.textContent = 'Simpan Transaksi ✓';
+      } else {
+        btnNext.textContent = 'Lanjut →';
+      }
+      validateStep();
+    }
+
+    function validateStep() {
+      const btn = document.getElementById('btnNext');
+      let valid = false;
+      if (currentStep === 0) valid = !!selectedCustomer;
+      if (currentStep === 1) valid = cart.length > 0 || !!pendingLayanan;
+      if (currentStep === 2) valid = true;
+      if (currentStep === 3) valid = !!metodePembayaran;
+      btn.disabled = !valid;
+    }
+
+    function nextStep() {
+      if (currentStep === 1 && pendingLayanan) addToCart();
+      if (currentStep === TOTAL_STEPS - 1) { saveTransaksi(); return; }
+      currentStep++;
+      updateStepUI();
+      if (currentStep === 1) renderLayananOptions();
+      if (currentStep === 3) renderOrderSummary();
+    }
+
+    function prevStep() {
+      currentStep--;
+      updateStepUI();
+    }
+
+    /* ── Step 0: Customer ── */
+    function renderCustomerOptions(list) {
+      document.getElementById('customerOptions').innerHTML = list.map(c => {
+        const nama = `${c.pel_first_name} ${c.pel_last_name}`.trim();
+        const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        const isSel = selectedCustomer?.id_pelanggan === c.id_pelanggan;
+        return `
+          <button class="customer-option ${isSel?'selected':''}" onclick="selectCustomer(${c.id_pelanggan})">
+            <div style="width:46px; height:46px; border-radius:14px; background:${isSel?'#1565C0':'#F3F4F6'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:${isSel?'white':'#6B7280'}; flex-shrink:0;">${initials}</div>
+            <div style="flex:1; text-align:left;">
+              <p style="font-size:14px; font-weight:700; color:#111827;">${nama}</p>
+              <p style="font-size:12px; color:#9CA3AF;">${c.pel_no_telepon}</p>
+            </div>
+            <div class="check-circle ${isSel?'checked':''}">${isSel?'✓':''}</div>
+          </button>`;
+      }).join('');
+    }
+
+    function filterCustomerOptions() {
+      const q = document.getElementById('customerSearch').value.toLowerCase();
+      renderCustomerOptions(customers.filter(c =>
+        (`${c.pel_first_name} ${c.pel_last_name}`).toLowerCase().includes(q) ||
+        c.pel_no_telepon.includes(q)
+      ));
+    }
+
+    function selectCustomer(id) {
+      selectedCustomer = customers.find(c => c.id_pelanggan === id);
+      renderCustomerOptions(customers);
+      validateStep();
+    }
+
+    /* ── Step 1: Layanan ── */
+    function switchType(type) {
+      tipeLayanan = type;
+      subKategori = type === 'kiloan' ? 'Cuci Komplit' : 'Pakaian';
+      pendingLayanan = null;
+      document.getElementById('btnKiloan').style.cssText = type==='kiloan'
+        ? 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:800; background:white; color:#1565C0; box-shadow:0 2px 8px rgba(21,101,192,0.15);'
+        : 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:#6B7280;';
+      document.getElementById('btnSatuan').style.cssText = type==='satuan'
+        ? 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:800; background:white; color:#1565C0; box-shadow:0 2px 8px rgba(21,101,192,0.15);'
+        : 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:#6B7280;';
+      renderLayananOptions();
+    }
+
+    function renderLayananOptions() {
+      const subs = tipeLayanan === 'kiloan' ? KILOAN_SUB : SATUAN_SUB;
+      document.getElementById('catPills').innerHTML = subs.map(s => `
+        <button class="cat-pill ${subKategori===s?'active':''}" onclick="setSubKat('${s}')">${s}</button>
+      `).join('');
+
+      let visible = [];
+      if (tipeLayanan === 'kiloan') {
+        visible = layananAll.filter(l => l.jenis_nama === subKategori);
+      } else {
+        const fn = SATUAN_FILTER[subKategori];
+        visible = fn ? layananAll.filter(fn) : [];
+      }
+
+      document.getElementById('layananOptions').innerHTML = visible.map(l => {
+        const isSel = pendingLayanan?.id_layanan === l.id_layanan;
+        return `
+          <button class="layanan-option ${isSel?'selected':''}" onclick="selectLayanan(${l.id_layanan})">
+            <div style="width:48px; height:48px; border-radius:14px; background:${isSel?'#DBEAFE':'#F9FAFB'}; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${l.icon || '🧺'}</div>
+            <div style="flex:1; text-align:left;">
+              <p style="font-size:13px; font-weight:700; color:#111827;">${l.lay_nama}</p>
+              <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:2px;">
+                ${formatRupiah(l.lay_harga)}/${l.satuan}
+                ${l.estimasi_hari > 0 ? ' · ~' + l.estimasi_hari + ' hari' : ''}
+              </p>
+            </div>
+            <div class="check-circle ${isSel?'checked':''}">${isSel?'✓':''}</div>
+          </button>`;
+      }).join('') || `<p style="text-align:center; color:#9CA3AF; padding:20px 0;">Belum ada layanan di kategori ini</p>`;
+
+      updateQtySection();
+      renderCart();
+      validateStep();
+    }
+
+    function setSubKat(sub) {
+      subKategori = sub;
+      pendingLayanan = null;
+      renderLayananOptions();
+    }
+
+    function selectLayanan(id) {
+      pendingLayanan = layananAll.find(l => l.id_layanan === id);
+      pendingQty = 1;
+      renderLayananOptions();
+      updateQtySection();
+      validateStep();
+    }
+
+    function updateQtySection() {
+      const sec = document.getElementById('qtySection');
+      if (!pendingLayanan) { sec.style.display = 'none'; return; }
+      sec.style.display = 'block';
+      const isKg = pendingLayanan.satuan === 'kg';
+      document.getElementById('qtyLabel').textContent = isKg ? 'Estimasi Berat' : 'Jumlah Item';
+      refreshQtyDisplay();
+    }
+
+    function changeQty(delta) {
+      pendingQty = Math.max(1, pendingQty + delta);
+      refreshQtyDisplay();
+    }
+
+    function refreshQtyDisplay() {
+      if (!pendingLayanan) return;
+      const isKg = pendingLayanan.satuan === 'kg';
+      document.getElementById('qtyDisplay').textContent = pendingQty + (isKg ? ' kg' : ' pcs');
+      document.getElementById('qtyPrice').textContent = '= ' + formatRupiah(pendingLayanan.lay_harga * pendingQty);
+    }
+
+    function addToCart() {
+      if (!pendingLayanan) return;
+      const isKg = pendingLayanan.satuan === 'kg';
+      cart.push({
+        layananId: pendingLayanan.id_layanan,
+        nama:      pendingLayanan.lay_nama,
+        harga:     pendingLayanan.lay_harga,
+        qty:       pendingQty,
+        isKiloan:  isKg,
+        catatan:   document.getElementById('catatanInput').value,
+        subTotal:  pendingLayanan.lay_harga * pendingQty,
+      });
+      pendingLayanan = null;
+      pendingQty     = 1;
+      document.getElementById('catatanInput').value = '';
+      document.getElementById('qtySection').style.display = 'none';
+      renderLayananOptions();
+      renderCart();
+      validateStep();
+    }
+
+    function renderCart() {
+      const sec = document.getElementById('cartSection');
+      if (cart.length === 0) { sec.style.display = 'none'; return; }
+      sec.style.display = 'block';
+      sec.innerHTML = `
+        <div style="background:white; border-radius:18px; padding:16px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border:1.5px solid #BFDBFE; margin-bottom:10px;">
+          <p style="font-size:13px; font-weight:700; color:#1565C0; margin-bottom:12px;">🛒 Keranjang (${cart.length} layanan)</p>
+          ${cart.map((item, i) => `
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #F3F4F6;">
+              <div style="flex:1;">
+                <p style="font-size:12px; font-weight:600; color:#374151;">${item.nama}</p>
+                <p style="font-size:11px; color:#9CA3AF;">${item.qty}${item.isKiloan?' kg':' pcs'} · ${formatRupiah(item.subTotal)}</p>
+              </div>
+              <button onclick="removeFromCart(${i})" style="width:26px; height:26px; border-radius:13px; background:#FEE2E2; border:none; cursor:pointer; font-size:13px; color:#DC2626;">✕</button>
+            </div>
+          `).join('')}
+          <div style="display:flex; justify-content:space-between; padding-top:10px; font-size:14px; font-weight:700; color:#374151;">
+            <span>Subtotal Keranjang</span>
+            <span style="color:#1565C0;">${formatRupiah(cart.reduce((s,i)=>s+i.subTotal,0))}</span>
+          </div>
+        </div>
+        <button onclick="addToCart()" style="width:100%; height:44px; border-radius:12px; background:white; border:1.5px solid #1565C0; color:#1565C0; font-size:13px; font-weight:700; cursor:pointer;" ${pendingLayanan?'':'style="opacity:0.5; pointer-events:none;"'}>
+          ＋ Tambah Layanan Lain
+        </button>`;
+    }
+
+    function removeFromCart(i) {
+      cart.splice(i, 1);
+      renderCart();
+      validateStep();
+    }
+
+    /* ── Step 2: Tambahan ── */
+    function renderAddons() {
+      const tambahan   = addons.filter(a => !a.add_nama.toLowerCase().includes('pick up') && !a.add_nama.toLowerCase().includes('delivery'));
+      const antarJemput = addons.filter(a => a.add_nama.toLowerCase().includes('pick up') || a.add_nama.toLowerCase().includes('delivery'));
+
+      document.getElementById('tambahanOptions').innerHTML = tambahan.map(a => `
+        <button onclick="toggleAddon('tambahan', ${a.id_add_on})" id="addon_t_${a.id_add_on}"
+          style="display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; border-radius:14px; border:1.5px solid #F3F4F6; background:white; cursor:pointer; margin-bottom:10px; text-align:left; transition:all 0.15s;">
+          <div style="width:48px; height:48px; border-radius:14px; background:#F9FAFB; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${a.icon || '✨'}</div>
+          <div style="flex:1;">
+            <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
+            <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:2px;">${formatRupiah(a.tambahan_harga)}/kg</p>
+          </div>
+          <div id="addonCheck_t_${a.id_add_on}" style="width:22px; height:22px; border-radius:6px; border:2px solid #D1D5DB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"></div>
+        </button>`).join('');
+
+      document.getElementById('antarJemputOptions').innerHTML = antarJemput.map(a => `
+        <button onclick="toggleAddon('antar', ${a.id_add_on})" id="addon_a_${a.id_add_on}"
+          style="display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; border-radius:14px; border:1.5px solid #F3F4F6; background:white; cursor:pointer; margin-bottom:10px; text-align:left; transition:all 0.15s;">
+          <div style="width:48px; height:48px; border-radius:14px; background:#F9FAFB; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${a.icon || '🚗'}</div>
+          <div style="flex:1;">
+            <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
+            <p style="font-size:12px; color:#7C3AED; font-weight:600; margin-top:2px;">${formatRupiah(a.tambahan_harga)} / sekali</p>
+          </div>
+          <div id="addonCheck_a_${a.id_add_on}" style="width:22px; height:22px; border-radius:6px; border:2px solid #D1D5DB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"></div>
+        </button>`).join('');
+    }
+
+    function toggleAddon(type, id) {
+      const set  = type === 'tambahan' ? selectedTambahan : selectedAntar;
+      const pfx  = type === 'tambahan' ? 't' : 'a';
+      const btn  = document.getElementById(`addon_${pfx}_${id}`);
+      const chk  = document.getElementById(`addonCheck_${pfx}_${id}`);
+      if (set.has(id)) {
+        set.delete(id);
+        btn.style.border = '1.5px solid #F3F4F6';
+        btn.style.background = 'white';
+        chk.style.background = 'transparent';
+        chk.style.border     = '2px solid #D1D5DB';
+        chk.textContent = '';
+      } else {
+        set.add(id);
+        btn.style.border = type==='tambahan' ? '2px solid #1565C0' : '2px solid #7C3AED';
+        btn.style.background = type==='tambahan' ? '#EFF6FF' : '#F5F3FF';
+        chk.style.background = type==='tambahan' ? '#1565C0' : '#7C3AED';
+        chk.style.border     = 'none';
+        chk.innerHTML        = '<span style="color:white; font-size:13px;">✓</span>';
+      }
+      updateExtraSummary();
+    }
+
+    function updateExtraSummary() {
+      const sec = document.getElementById('extraSummary');
+      const selT = [...selectedTambahan].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
+      if (!selT.length && !selA.length) { sec.style.display = 'none'; return; }
+      sec.style.display = 'block';
+      const rows = [
+        ...selT.map(a => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#6B7280; margin-bottom:4px;"><span>${a.icon||'✨'} ${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga * Math.max(1, totalKgKiloan))}</span></div>`),
+        ...selA.map(a => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#6B7280; margin-bottom:4px;"><span>${a.icon||'🚗'} ${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga)}</span></div>`),
+      ].join('');
+      const totalExtra = selT.reduce((s,a) => s + a.tambahan_harga * Math.max(1, totalKgKiloan), 0)
+                       + selA.reduce((s,a) => s + a.tambahan_harga, 0);
+      sec.innerHTML = `<p style="font-size:12px; font-weight:700; color:#374151; margin-bottom:8px;">Ringkasan Biaya Tambahan</p>
+        ${rows}
+        <hr style="border:none; border-top:1px solid #BFDBFE; margin:8px 0;"/>
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:800; color:#1565C0;">
+          <span>Total Ekstra</span><span>+${formatRupiah(totalExtra)}</span>
+        </div>`;
+    }
+
+    /* ── Step 3: Pembayaran ── */
+    function renderPayOptions() {
+      document.getElementById('payOptions').innerHTML = [
+        { value:'Cash',     icon:'💵', desc:'Pembayaran tunai di kasir' },
+        { value:'Cashless', icon:'📱', desc:'Transfer / QRIS / E-Wallet' },
+      ].map(m => `
+        <button onclick="selectPay('${m.value}')" id="pay_${m.value}"
+          style="display:flex; align-items:center; gap:16px; width:100%; padding:16px 18px; border-radius:16px; border:2px solid transparent; background:white; cursor:pointer; margin-bottom:12px; text-align:left; box-shadow:0 1px 5px rgba(0,0,0,0.06); transition:all 0.15s;">
+          <div style="width:52px; height:52px; border-radius:14px; background:#EFF6FF; display:flex; align-items:center; justify-content:center; font-size:28px; flex-shrink:0;">${m.icon}</div>
+          <div>
+            <p style="font-size:15px; font-weight:700; color:#111827;">${m.value}</p>
+            <p style="font-size:13px; color:#6B7280; margin-top:2px;">${m.desc}</p>
+          </div>
+          <div id="payCheck_${m.value}" style="margin-left:auto; font-size:22px; display:none; color:#1565C0;">✓</div>
+        </button>`).join('');
+    }
+
+    function selectPay(val) {
+      metodePembayaran = val;
+      ['Cash','Cashless'].forEach(v => {
+        const btn = document.getElementById(`pay_${v}`);
+        const chk = document.getElementById(`payCheck_${v}`);
+        if (v === val) {
+          btn.style.border = '2px solid #1565C0';
+          btn.style.background = '#EFF6FF';
+          chk.style.display = 'block';
+        } else {
+          btn.style.border = '2px solid transparent';
+          btn.style.background = 'white';
+          chk.style.display = 'none';
+        }
+      });
+      renderOrderSummary();
+      validateStep();
+    }
+
+    function renderOrderSummary() {
+      const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
+      const selT = [...selectedTambahan].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      const cartTotal  = cart.reduce((s,i) => s + i.subTotal, 0);
+      const extraTotal = selT.reduce((s,a) => s + a.tambahan_harga * Math.max(1, totalKgKiloan), 0)
+                       + selA.reduce((s,a) => s + a.tambahan_harga, 0);
+      const grandTotal = cartTotal + extraTotal;
+
+      document.getElementById('orderSummary').innerHTML = `
+        ${cart.map(i => `
+          <div class="summary-row">
+            <span style="color:#6B7280;">${i.nama} (${i.qty}${i.isKiloan?' kg':' pcs'})</span>
+            <strong>${formatRupiah(i.subTotal)}</strong>
+          </div>`).join('')}
+        ${selT.map(a => `<div class="summary-row"><span style="color:#6B7280;">${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga * Math.max(1,totalKgKiloan))}</span></div>`).join('')}
+        ${selA.map(a => `<div class="summary-row"><span style="color:#6B7280;">${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga)}</span></div>`).join('')}
+        <div class="summary-row" style="font-size:16px; font-weight:900; color:#111827; border-bottom:none; padding-top:14px;">
+          <span>Total Bayar</span>
+          <span style="color:#1565C0;">${formatRupiah(grandTotal)}</span>
+        </div>`;
+    }
+
+    /* ── Save ── */
+    async function saveTransaksi() {
+      const btn = document.getElementById('btnNext');
+      btn.disabled = true; btn.textContent = 'Menyimpan...';
+      try {
+        const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
+        const selT = [...selectedTambahan].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+        const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+        const extraTotal = selT.reduce((s,a) => s + a.tambahan_harga * Math.max(1, totalKgKiloan), 0)
+                         + selA.reduce((s,a) => s + a.tambahan_harga, 0);
+        const grandTotal = cart.reduce((s,i) => s + i.subTotal, 0) + extraTotal;
+
+        const result = await api.transaksi.create({
+          id_pelanggan:     selectedCustomer.id_pelanggan,
+          id_user:          currentUser.id,
+          total_bayar:      grandTotal,
+          mtd_pembayaran:   metodePembayaran,
+          sudah_dibayar:    true,
+          items: cart.map(i => ({
+            id_layanan:    i.layananId,
+            sub_harga:     i.subTotal,
+            jumlah_barang: i.isKiloan ? 1 : i.qty,
+            berat_barang:  i.isKiloan ? i.qty : 0,
+            catatan:       i.catatan || '',
+            addons: [...selectedTambahan, ...selectedAntar],
+          })),
+        });
+
+        /* Success screen */
+        currentStep = TOTAL_STEPS;
+        document.getElementById('navBtns').style.display = 'none';
+        document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('step4').classList.add('active');
+        document.getElementById('successCard').innerHTML = `
+          <div style="padding:16px 20px;">
+            ${[
+              ['No. Transaksi', result.id_transaksi],
+              ['Customer',      `${selectedCustomer.pel_first_name} ${selectedCustomer.pel_last_name}`],
+              ['Total Bayar',   formatRupiah(grandTotal)],
+              ['Metode',        metodePembayaran],
+            ].map(([k,v]) => `
+              <div class="summary-row"><span style="color:#9CA3AF; font-size:13px;">${k}</span>
+              <strong style="font-size:13px;">${v}</strong></div>`).join('')}
+          </div>`;
+      } catch (err) {
+        showToast('Gagal menyimpan: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = 'Simpan Transaksi ✓';
+      }
+    }
+  </script>
+</body>
+</html>
