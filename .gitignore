@@ -1,0 +1,12 @@
+# Mengabaikan file sampah compiler Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Mengabaikan konfigurasi lokal editor VS Code kamu
+.vscode/
+
+# Mengabaikan file private key / credentials (biar aman)
+*.pem
+.env

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laporan — Manager Shabria Laundry</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .page-inner  { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
+    .filter-row  { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+    .net-banner  {
+      border-radius: 22px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .stat-grid   { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    .chart-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .entry-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid #F3F4F6;
+    }
+    .entry-row:last-child { border-bottom: none; }
+    @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .stat-grid  { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div id="app" style="display:flex; height:100vh; overflow:hidden; background:#F0FFF4;">
+    <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0;"></div>
+    <div id="overlay" onclick="closeSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:198;"></div>
+    <div id="mobileSidebar" style="display:none; position:fixed; top:0; left:0; bottom:0; width:260px; z-index:199;"></div>
+
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+      <header id="topHeader"></header>
+
+      <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
+        <div class="page-inner">
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h1 style="font-size:22px; font-weight:900; color:#111827;">Laporan Penjualan</h1>
+              <p id="rangeLabel" style="font-size:13px; color:#9CA3AF; margin-top:4px;">Bulan Ini</p>
+            </div>
+          </div>
+
+          <!-- Filter -->
+          <div class="filter-row">
+            <button class="btn active" id="btnBulanIni"  onclick="setFilter('bulan-ini')">Bulan Ini</button>
+            <button class="btn btn-ghost" id="btnBulanLalu" onclick="setFilter('bulan-lalu')">Bulan Lalu</button>
+            <button class="btn btn-ghost" id="btnSemua"     onclick="setFilter('semua')">Semua</button>
+            <button class="btn btn-ghost" id="btnCustom"    onclick="toggleCustom()">📅 Custom</button>
+            <div id="customPicker" style="display:none; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <input type="date" id="dateFrom" class="form-control" style="width:160px;" />
+              <span style="color:#9CA3AF;">s/d</span>
+              <input type="date" id="dateTo" class="form-control" style="width:160px;" />
+              <button onclick="applyCustom()" class="btn btn-primary btn-sm">Terapkan</button>
+            </div>
+          </div>
+
+          <!-- Net Banner -->
+          <div class="net-banner" id="netBanner">
+            <div>
+              <p style="color:rgba(255,255,255,0.7); font-size:13px; margin-bottom:4px;">Net Profit</p>
+              <p id="netVal" style="color:white; font-size:32px; font-weight:900;">Rp 0</p>
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+              <div style="background:rgba(255,255,255,0.12); border-radius:14px; padding:14px 18px;">
+                <p style="color:rgba(255,255,255,0.65); font-size:11px; margin-bottom:4px;">Total Pemasukan</p>
+                <p id="pemasukanVal" style="color:white; font-size:16px; font-weight:800;">–</p>
+              </div>
+              <div style="background:rgba(255,255,255,0.12); border-radius:14px; padding:14px 18px;">
+                <p style="color:rgba(255,255,255,0.65); font-size:11px; margin-bottom:4px;">Total Pengeluaran</p>
+                <p id="pengeluaranVal" style="color:white; font-size:16px; font-weight:800;">–</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stat cards -->
+          <div class="stat-grid" id="statGrid"></div>
+
+          <!-- Charts -->
+          <div class="chart-row">
+            <div class="card">
+              <div class="card-header">Tren Bulanan</div>
+              <div style="padding:16px;"><canvas id="barChart" height="220"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header">Omzet per Kategori</div>
+              <div style="padding:16px;"><canvas id="pieChart" height="220"></canvas></div>
+              <div id="pieLegend" style="padding:0 16px 16px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- Detail rows -->
+          <div class="detail-grid">
+            <div class="card">
+              <div class="card-header">Detail Transaksi</div>
+              <div id="trxRows" style="max-height:360px; overflow-y:auto;"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">Detail Pengeluaran</div>
+              <div id="penglRows" style="max-height:360px; overflow-y:auto;"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    const COLORS = ['#1565C0','#0288D1','#7C3AED','#0891B2','#15803D'];
+    const BULAN  = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'Mei','06':'Jun','07':'Jul','08':'Ags','09':'Sep','10':'Okt','11':'Nov','12':'Des'};
+
+    let currentFilter = 'bulan-ini';
+    let customFrom    = '';
+    let customTo      = '';
+    let barChartInst  = null;
+    let pieChartInst  = null;
+
+    function getDateRange() {
+      const today = new Date();
+      const fmt   = d => d.toISOString().slice(0,10);
+      if (currentFilter === 'bulan-ini') {
+        return { from: fmt(new Date(today.getFullYear(), today.getMonth(), 1)),
+                 to:   fmt(new Date(today.getFullYear(), today.getMonth()+1, 0)) };
+      }
+      if (currentFilter === 'bulan-lalu') {
+        return { from: fmt(new Date(today.getFullYear(), today.getMonth()-1, 1)),
+                 to:   fmt(new Date(today.getFullYear(), today.getMonth(), 0)) };
+      }
+      if (currentFilter === 'custom') return { from: customFrom, to: customTo };
+      return { from: '2000-01-01', to: '2099-12-31' };
+    }
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-row .btn').forEach(b => {
+        b.className = b.className.replace(' btn-primary','').replace('active','') + ' btn-ghost';
+      });
+      const btnMap = {'bulan-ini':'btnBulanIni','bulan-lalu':'btnBulanLalu','semua':'btnSemua'};
+      const btn = document.getElementById(btnMap[f]);
+      if (btn) btn.className = 'btn btn-primary';
+      document.getElementById('rangeLabel').textContent =
+        f==='bulan-ini'?'Bulan Ini': f==='bulan-lalu'?'Bulan Lalu':'Semua Data';
+      document.getElementById('customPicker').style.display = 'none';
+      loadData();
+    }
+
+    function toggleCustom() {
+      const p = document.getElementById('customPicker');
+      p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function applyCustom() {
+      customFrom = document.getElementById('dateFrom').value;
+      customTo   = document.getElementById('dateTo').value;
+      if (!customFrom || !customTo) { showToast('Pilih rentang tanggal','error'); return; }
+      currentFilter = 'custom';
+      document.getElementById('rangeLabel').textContent = `${customFrom} s/d ${customTo}`;
+      loadData();
+    }
+
+    function getKat(nama) {
+      const n=(nama||'').toLowerCase();
+      if (n.includes('express')||n.includes('same day')) return 'Express';
+      if (n.includes('karpet')||n.includes('sepatu')||n.includes('bedcover')||n.includes('boneka')) return 'Satuan';
+      if (n.includes('tambahan')||n.includes('antar')) return 'Tambahan';
+      return 'Kiloan';
+    }
+
+    async function loadData() {
+      const { from, to } = getDateRange();
+      try {
+        const [transaksi, pengeluaran, ringkasan] = await Promise.all([
+          api.transaksi.all({ from, to }),
+          api.laporan.pengeluaran({ from, to }),
+          api.laporan.ringkasan({ from, to }),
+        ]);
+
+        const paid   = transaksi.filter(t => t.sudah_dibayar);
+        const netP   = ringkasan.net_profit ?? 0;
+        const pemasuk= ringkasan.pemasukan ?? 0;
+        const pengl  = ringkasan.pengeluaran ?? 0;
+        const selesai= transaksi.filter(t => t.detail?.[0]?.status_pengerjaan === 'Selesai').length;
+
+        /* Banner */
+        document.getElementById('netVal').textContent        = formatRupiah(netP);
+        document.getElementById('pemasukanVal').textContent  = formatRupiah(pemasuk);
+        document.getElementById('pengeluaranVal').textContent= formatRupiah(pengl);
+        document.getElementById('netBanner').style.background=
+          netP >= 0
+            ? 'linear-gradient(135deg,#15803D,#16A34A)'
+            : 'linear-gradient(135deg,#DC2626,#EF4444)';
+
+        /* Stats */
+        document.getElementById('statGrid').innerHTML = [
+          { label:'Total Transaksi',   value: transaksi.length,  sub:`${selesai} selesai`,    bg:'#EFF6FF', color:'#1565C0', icon:'📋' },
+          { label:'Transaksi Lunas',   value: paid.length,       sub:'sudah dibayar',          bg:'#F0FDF4', color:'#15803D', icon:'✅' },
+          { label:'Avg / Transaksi',   value: formatRupiah(Math.round(pemasuk/Math.max(1,paid.length))), sub:'per order', bg:'#FFF7ED', color:'#C2410C', icon:'💡' },
+          { label:'Total Pengeluaran', value: formatRupiah(pengl),sub:'operasional',           bg:'#FEF2F2', color:'#DC2626', icon:'📉' },
+        ].map(s=>`
+          <div style="background:${s.bg}; border-radius:16px; padding:18px 20px;">
+            <span style="font-size:22px;">${s.icon}</span>
+            <p style="font-size:${typeof s.value==='string'?14:24}px; font-weight:900; color:${s.color}; margin-top:8px; line-height:1;">${s.value}</p>
+            <p style="font-size:13px; font-weight:700; color:#374151; margin-top:4px;">${s.label}</p>
+            <p style="font-size:11px; color:#9CA3AF; margin-top:2px;">${s.sub}</p>
+          </div>`).join('');
+
+        /* Bar chart */
+        const barMap = {};
+        paid.forEach(t=>{
+          const m=(t.tanggal_masuk||'').slice(0,7);
+          if(!barMap[m])barMap[m]={omzet:0,pengeluaran:0};
+          barMap[m].omzet+=t.total_bayar||0;
+        });
+        pengeluaran.forEach(e=>{
+          const m=(e.tanggal||'').slice(0,7);
+          if(!barMap[m])barMap[m]={omzet:0,pengeluaran:0};
+          barMap[m].pengeluaran+=e.jumlah||0;
+        });
+        const sorted = Object.entries(barMap).sort(([a],[b])=>a.localeCompare(b));
+        const bLabels= sorted.map(([m])=>BULAN[m.slice(5,7)]??m.slice(5,7));
+        const bOmzet = sorted.map(([,v])=>v.omzet);
+        const bPengl = sorted.map(([,v])=>v.pengeluaran);
+
+        if (barChartInst) barChartInst.destroy();
+        barChartInst = new Chart(document.getElementById('barChart'),{
+          type:'bar',
+          data:{ labels:bLabels, datasets:[
+            {label:'Omzet',       data:bOmzet, backgroundColor:'#1565C0', borderRadius:5},
+            {label:'Pengeluaran', data:bPengl, backgroundColor:'#FCA5A5', borderRadius:5},
+          ]},
+          options:{
+            responsive:true, maintainAspectRatio:false,
+            plugins:{legend:{display:false},
+              tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatRupiah(ctx.raw)}`}}},
+            scales:{
+              x:{grid:{display:false},ticks:{font:{size:11},color:'#9CA3AF'}},
+              y:{grid:{color:'#F3F4F6'},ticks:{callback:v=>'Rp'+(v/1000)+'K',font:{size:10},color:'#9CA3AF'}},
+            }
+          }
+        });
+
+        /* Pie */
+        const katMap={};
+        paid.forEach(t=>{
+          const items = t.detail||[];
+          if(items.length){
+            items.forEach(d=>{ const k=getKat(d.lay_nama); katMap[k]=(katMap[k]||0)+(d.sub_harga||0); });
+          } else {
+            const k=getKat(''); katMap[k]=(katMap[k]||0)+(t.total_bayar||0);
+          }
+        });
+        const pieLabels=Object.keys(katMap);
+        const pieData=Object.values(katMap);
+        const total=pieData.reduce((s,v)=>s+v,0);
+
+        if(pieChartInst) pieChartInst.destroy();
+        pieChartInst = new Chart(document.getElementById('pieChart'),{
+          type:'doughnut',
+          data:{labels:pieLabels,datasets:[{data:pieData,backgroundColor:COLORS,borderWidth:2,borderColor:'white'}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+            tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatRupiah(ctx.raw)}`}}},cutout:'58%'}
+        });
+        document.getElementById('pieLegend').innerHTML = pieLabels.map((l,i)=>`
+          <div style="display:flex; align-items:center; gap:5px;">
+            <div style="width:10px; height:10px; border-radius:3px; background:${COLORS[i]};"></div>
+            <span style="font-size:11px; color:#374151;">${l}</span>
+            <span style="font-size:11px; font-weight:700; color:${COLORS[i]};">${Math.round((pieData[i]/Math.max(1,total))*100)}%</span>
+          </div>`).join('');
+
+        /* Detail rows */
+        document.getElementById('trxRows').innerHTML = transaksi.length
+          ? transaksi.map(t=>`
+              <div class="entry-row">
+                <span style="font-size:18px;">${t.sudah_dibayar?'💚':'⚪'}</span>
+                <div style="flex:1; min-width:0;">
+                  <p style="font-size:12px; font-weight:600; color:#374151;">${t.id_transaksi} — ${t.pelanggan_nama||'-'}</p>
+                  <p style="font-size:10px; color:#9CA3AF;">${(t.tanggal_masuk||'').slice(0,10)} · ${t.kasir_nama||'-'}</p>
+                </div>
+                <p style="font-size:13px; font-weight:700; color:${t.sudah_dibayar?'#15803D':'#9CA3AF'}; white-space:nowrap;">${formatRupiah(t.total_bayar)}</p>
+              </div>`).join('')
+          : '<p style="text-align:center; color:#9CA3AF; padding:30px 0;">Tidak ada transaksi</p>';
+
+        document.getElementById('penglRows').innerHTML = pengeluaran.length
+          ? pengeluaran.map(e=>`
+              <div class="entry-row">
+                <span style="font-size:18px;">🔴</span>
+                <div style="flex:1; min-width:0;">
+                  <p style="font-size:12px; font-weight:600; color:#374151;">${e.deskripsi}</p>
+                  <p style="font-size:10px; color:#9CA3AF;">${e.tanggal||'-'} · ${e.kategori||'-'}</p>
+                </div>
+                <p style="font-size:13px; font-weight:700; color:#DC2626; white-space:nowrap;">-${formatRupiah(e.jumlah)}</p>
+              </div>`).join('')
+          : '<p style="text-align:center; color:#9CA3AF; padding:30px 0;">Tidak ada pengeluaran</p>';
+
+      } catch (err) {
+        showToast('Gagal memuat: ' + err.message, 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await requireAuth(['manager']);
+      initManagerLayout(user, 'laporan');
+      await loadData();
+    });
+  </script>
+</body>
+</html>
