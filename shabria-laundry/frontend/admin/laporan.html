@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laporan — Admin Shabria Laundry</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <style>
+    .page-inner { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .sum-card {
+      border-radius: 18px;
+      padding: 20px 24px;
+    }
+    .sum-card .label  { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+    .sum-card .amount { font-size: 24px; font-weight: 900; color: white; }
+    .sum-card .sub    { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+
+    .entry-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #F3F4F6;
+      transition: background 0.15s;
+    }
+    .entry-row:last-child  { border-bottom: none; }
+    .entry-row:hover       { background: #F9FAFB; }
+
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      background: white;
+      color: #6B7280;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: #1565C0;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(21,101,192,0.3);
+    }
+
+    @media (max-width: 768px) {
+      .summary-strip { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="display:flex; height:100vh; overflow:hidden; background:#F0F7FF;">
+    <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0;"></div>
+    <div id="overlay" onclick="closeSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:198;"></div>
+    <div id="mobileSidebar" style="display:none; position:fixed; top:0; left:0; bottom:0; width:260px; z-index:199;"></div>
+
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+      <header id="topHeader"></header>
+
+      <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
+        <div class="page-inner">
+
+          <!-- Title + tombol input pengeluaran -->
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h1 style="font-size:22px; font-weight:900; color:#111827;">Laporan Keuangan</h1>
+              <p style="font-size:13px; color:#9CA3AF; margin-top:4px;">Pemasukan otomatis · Input pengeluaran manual</p>
+            </div>
+            <button onclick="openModal()" class="btn btn-primary">＋ Input Pengeluaran</button>
+          </div>
+
+          <!-- Info banner -->
+          <div style="display:flex; align-items:flex-start; gap:12px; padding:14px 18px; border-radius:14px; background:#EFF6FF; border:1px solid #BFDBFE; margin-bottom:24px;">
+            <span style="font-size:18px; flex-shrink:0;">💡</span>
+            <p style="font-size:12px; color:#1565C0; font-weight:600; line-height:1.6;">
+              <strong>Pemasukan</strong> dihitung otomatis dari transaksi lunas.
+              Kamu hanya bisa menambahkan <strong>pengeluaran operasional</strong> secara manual.
+            </p>
+          </div>
+
+          <!-- Summary strip -->
+          <div class="summary-strip" id="summaryStrip">
+            <div class="sum-card" style="background:linear-gradient(135deg,#1565C0,#0288D1); grid-column:1/-1;">
+              <p class="label">Net Profit</p>
+              <p class="amount" id="netProfitVal">Menghitung...</p>
+              <p class="sub" id="netProfitSub"></p>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;" id="subCards">
+            <!-- Pemasukan & Pengeluaran card -->
+          </div>
+
+          <!-- Filter tabs -->
+          <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+            <button class="tab-btn active" onclick="setTab('semua',this)">Semua</button>
+            <button class="tab-btn"        onclick="setTab('pemasukan',this)">📈 Pemasukan</button>
+            <button class="tab-btn"        onclick="setTab('pengeluaran',this)">📉 Pengeluaran</button>
+          </div>
+
+          <!-- Entries list -->
+          <div class="card" id="entriesCard">
+            <div class="card-header">Detail Entri</div>
+            <div id="entriesList">
+              <p style="text-align:center; color:#9CA3AF; padding:40px 0;">Memuat data...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Input Pengeluaran -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-header">
+        <h3>Input Pengeluaran Operasional</h3>
+        <button onclick="closeModal()" style="background:none; border:none; cursor:pointer; font-size:22px; color:#9CA3AF;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Deskripsi <span style="color:#EF4444;">*</span></label>
+          <input class="form-control" id="fDesc" placeholder="Contoh: Beli deterjen & pewangi" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jumlah (Rp) <span style="color:#EF4444;">*</span></label>
+          <input class="form-control" id="fJumlah" type="number" placeholder="45000" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Kategori</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+            <button class="tab-btn active" onclick="setKat('Operasional',this)">Operasional</button>
+            <button class="tab-btn"        onclick="setKat('Utilitas',this)">Utilitas</button>
+            <button class="tab-btn"        onclick="setKat('Perawatan',this)">Perawatan</button>
+            <button class="tab-btn"        onclick="setKat('Gaji',this)">Gaji</button>
+            <button class="tab-btn"        onclick="setKat('Lainnya',this)">Lainnya</button>
+          </div>
+          <input type="hidden" id="fKat" value="Operasional" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="savePengeluaran()" class="btn btn-danger" id="saveBtn">Simpan Pengeluaran</button>
+        <button onclick="closeModal()"      class="btn btn-ghost">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    let pemasukanList  = [];
+    let pengeluaranList = [];
+    let activeTab       = 'semua';
+    let currentUser     = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await requireAuth(['admin']);
+      initAdminLayout(currentUser, 'laporan');
+      await loadData();
+    });
+
+    async function loadData() {
+      try {
+        const [transaksi, pengeluaran, ringkasan] = await Promise.all([
+          api.transaksi.all(),
+          api.laporan.pengeluaran(),
+          api.laporan.ringkasan(),
+        ]);
+
+        /* Build pemasukan rows dari transaksi lunas */
+        pemasukanList = transaksi
+          .filter(t => t.sudah_dibayar)
+          .map(t => ({
+            id:        t.id_transaksi,
+            tanggal:   t.tanggal_masuk?.split('T')[0] ?? '-',
+            deskripsi: `Transaksi ${t.id_transaksi} – ${t.pelanggan_nama || ''}`,
+            jumlah:    t.total_bayar,
+            kategori:  'Transaksi',
+            tipe:      'pemasukan',
+          }));
+
+        pengeluaranList = pengeluaran.map(e => ({ ...e, tipe: 'pengeluaran' }));
+
+        /* Summary */
+        const netProfit = ringkasan.net_profit ?? 0;
+        document.getElementById('netProfitVal').textContent = formatRupiah(netProfit);
+        document.getElementById('netProfitSub').textContent =
+          `dari ${ringkasan.total_transaksi} transaksi`;
+        document.getElementById('summaryStrip').children[0].style.background =
+          netProfit >= 0
+            ? 'linear-gradient(135deg,#1565C0,#0288D1)'
+            : 'linear-gradient(135deg,#DC2626,#EF4444)';
+
+        document.getElementById('subCards').innerHTML = `
+          <div style="background:#F0FDF4; border-radius:18px; padding:20px 22px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:16px;">📈</span>
+              <span style="font-size:12px; font-weight:600; color:#15803D;">Total Pemasukan</span>
+            </div>
+            <p style="font-size:22px; font-weight:900; color:#15803D;">${formatRupiah(ringkasan.pemasukan ?? 0)}</p>
+            <p style="font-size:11px; color:#9CA3AF; margin-top:4px;">dari ${pemasukanList.length} transaksi lunas</p>
+          </div>
+          <div style="background:#FEF2F2; border-radius:18px; padding:20px 22px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:16px;">📉</span>
+              <span style="font-size:12px; font-weight:600; color:#DC2626;">Total Pengeluaran</span>
+            </div>
+            <p style="font-size:22px; font-weight:900; color:#DC2626;">${formatRupiah(ringkasan.pengeluaran ?? 0)}</p>
+            <p style="font-size:11px; color:#9CA3AF; margin-top:4px;">dari ${pengeluaranList.length} entri</p>
+          </div>`;
+
+        renderEntries();
+      } catch (err) {
+        showToast('Gagal memuat data: ' + err.message, 'error');
+      }
+    }
+
+    function setTab(tab, el) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        if (b.closest('#modal')) return;
+        b.classList.remove('active');
+      });
+      el.classList.add('active');
+      renderEntries();
+    }
+
+    function renderEntries() {
+      let list = [];
+      if (activeTab === 'semua')       list = [...pemasukanList, ...pengeluaranList];
+      if (activeTab === 'pemasukan')   list = pemasukanList;
+      if (activeTab === 'pengeluaran') list = pengeluaranList;
+      list.sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+
+      const el = document.getElementById('entriesList');
+      if (!list.length) {
+        el.innerHTML = '<p style="text-align:center; color:#9CA3AF; padding:40px 0;">Belum ada data</p>';
+        return;
+      }
+      el.innerHTML = list.map(e => `
+        <div class="entry-row">
+          <span style="font-size:22px; flex-shrink:0;">${e.tipe === 'pemasukan' ? '💚' : '🔴'}</span>
+          <div style="flex:1; min-width:0;">
+            <p style="font-size:14px; font-weight:600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${e.deskripsi}</p>
+            <p style="font-size:11px; color:#9CA3AF; margin-top:2px;">${e.tanggal} · ${e.kategori}</p>
+          </div>
+          <p style="font-size:14px; font-weight:800; white-space:nowrap; color:${e.tipe === 'pemasukan' ? '#15803D':'#DC2626'};">
+            ${e.tipe === 'pemasukan' ? '+' : '-'}${formatRupiah(e.jumlah)}
+          </p>
+        </div>`).join('');
+    }
+
+    /* Modal */
+    function openModal() {
+      document.getElementById('fDesc').value   = '';
+      document.getElementById('fJumlah').value = '';
+      document.getElementById('fKat').value    = 'Operasional';
+      document.querySelectorAll('#modal .tab-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+      document.getElementById('modal').classList.add('show');
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+    function setKat(kat, el) {
+      document.getElementById('fKat').value = kat;
+      document.querySelectorAll('#modal .tab-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    async function savePengeluaran() {
+      const desc   = document.getElementById('fDesc').value.trim();
+      const jumlah = Number(document.getElementById('fJumlah').value);
+      const kat    = document.getElementById('fKat').value;
+      if (!desc || !jumlah) { showToast('Deskripsi dan jumlah wajib diisi', 'error'); return; }
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.textContent = 'Menyimpan...';
+      try {
+        await api.laporan.addPengeluaran({
+          id_user:    currentUser.id,
+          deskripsi:  desc,
+          jumlah:     jumlah,
+          kategori:   kat,
+        });
+        showToast('Pengeluaran berhasil disimpan', 'success');
+        closeModal();
+        await loadData();
+      } catch (err) {
+        showToast('Gagal: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Simpan Pengeluaran';
+      }
+    }
+  </script>
+</body>
+</html>
