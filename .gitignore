@@ -1,3 +1,18 @@
+<<<<<<< HEAD
+# Mengabaikan file sampah compiler Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Mengabaikan konfigurasi lokal editor VS Code kamu
+.vscode/
+
+# Mengabaikan file private key / credentials (biar aman)
+*.pem
+.env
+=======
 .vscode/
 __pycache__/
 *.pyc
+>>>>>>> 6f0b44381ce3fc82b7e0ba5afbb6875c4a484aba
