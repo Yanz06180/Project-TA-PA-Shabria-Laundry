@@ -7,171 +7,163 @@
   <link rel="stylesheet" href="../css/main.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    body { background:#F0FFF4; }
-    .page  { padding:28px 32px; max-width:1280px; margin:0 auto; }
-    .kpi   { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
-    .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
-    .bot   { display:grid; grid-template-columns:1fr 300px; gap:20px; }
-    .card  { background:white; border-radius:18px; box-shadow:0 2px 10px rgba(0,0,0,0.07); overflow:hidden; }
-    .ch    { display:flex;align-items:center;justify-content:space-between;
-             padding:16px 20px;border-bottom:1px solid #F3F4F6; }
-    .ch h3 { font-size:15px;font-weight:800;color:#111827;margin:0; }
-
-    .qlink { display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;
-             text-decoration:none;color:inherit;margin-bottom:10px;transition:opacity 0.15s; }
-    .qlink:last-child { margin-bottom:0; }
-    .qlink-ico { width:44px;height:44px;border-radius:12px;background:white;
-                 display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0; }
-
-    @media(max-width:1100px){ .bot       { grid-template-columns:1fr; } }
-    @media(max-width:900px) { .chart-row { grid-template-columns:1fr; } }
-    @media(max-width:768px) { .kpi       { grid-template-columns:1fr 1fr; } }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0FFF4;}
+    .wrap{display:flex;height:100vh;overflow:hidden;}
+    #sidebar{flex-shrink:0;}
+    .body{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+    main{flex:1;overflow-y:auto;scrollbar-width:none;}
+    .pg{padding:24px 28px;max-width:1280px;margin:0 auto;}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+    .kcard{border-radius:16px;padding:18px 20px;}
+    .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;}
+    .bot{display:grid;grid-template-columns:1fr 290px;gap:18px;}
+    .card{background:white;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);overflow:hidden;}
+    .ch{display:flex;align-items:center;justify-content:space-between;
+        padding:14px 18px;border-bottom:1px solid #F3F4F6;}
+    .ch h3{font-size:14px;font-weight:800;color:#111827;margin:0;}
+    .ql{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;
+        text-decoration:none;color:inherit;margin-bottom:8px;transition:opacity 0.12s;}
+    .ql:last-child{margin-bottom:0;}
+    .qi{width:42px;height:42px;border-radius:11px;background:white;
+        display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    @media(max-width:1100px){.bot{grid-template-columns:1fr;}}
+    @media(max-width:900px){.chart-row{grid-template-columns:1fr;}}
+    @media(max-width:768px){.kpi{grid-template-columns:1fr 1fr;}}
   </style>
 </head>
 <body>
-<div style="display:flex;height:100vh;overflow:hidden;background:#F0FFF4;">
-
-  <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0;"></div>
+<div class="wrap">
+  <div id="sidebar"></div>
   <div id="overlay" onclick="closeSidebar()"
     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:198;"></div>
-  <div id="mobileSidebar"
-    style="display:none;position:fixed;top:0;left:0;bottom:0;width:260px;z-index:199;"></div>
+  <div id="mobileSidebar" style="display:none;"></div>
 
-  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
+  <div class="body">
     <header id="topHeader"></header>
+    <main>
+      <div class="pg">
 
-    <main style="flex:1;overflow-y:auto;">
-      <div class="page">
-
-        <!-- ── Greeting ── -->
-        <div style="margin-bottom:24px;">
-          <p id="todayDate" style="font-size:13px;color:#9CA3AF;margin:0 0 4px;"></p>
-          <h1 id="greetTitle" style="font-size:24px;font-weight:900;color:#111827;margin:0;">
-            Dashboard Monitoring
-          </h1>
-          <p style="font-size:14px;color:#6B7280;margin:4px 0 0;">Analisis & monitoring bisnis Shabria Laundry</p>
+        <!-- Greeting -->
+        <div style="margin-bottom:20px;">
+          <p id="tgl" style="font-size:12px;color:#9CA3AF;margin:0 0 4px;"></p>
+          <h1 id="greet" style="font-size:22px;font-weight:900;color:#111827;margin:0;">Dashboard Owner</h1>
+          <p style="font-size:13px;color:#6B7280;margin:4px 0 0;">Analisis &amp; monitoring bisnis</p>
         </div>
 
-        <!-- ── Hero Banner (hijau) ── -->
-        <div style="
-          background:linear-gradient(145deg,#15803D,#16A34A);
-          border-radius:24px;padding:28px 32px;
-          display:flex;align-items:center;justify-content:space-between;
-          margin-bottom:24px;box-shadow:0 8px 24px rgba(21,128,61,0.2);
-          flex-wrap:wrap;gap:20px;
-        ">
+        <!-- Hero banner hijau -->
+        <div style="background:linear-gradient(145deg,#15803D,#16A34A);border-radius:22px;
+                    padding:24px 28px;display:flex;align-items:center;justify-content:space-between;
+                    margin-bottom:22px;box-shadow:0 6px 20px rgba(21,128,61,0.2);flex-wrap:wrap;gap:16px;">
           <div>
-            <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0 0 6px;">TOTAL OMZET (ALL TIME)</p>
-            <p id="totalOmzet" style="color:white;font-size:36px;font-weight:900;letter-spacing:-1px;margin:0;">
-              Rp 0
-            </p>
-            <p id="omzetSub" style="color:#BBF7D0;font-size:13px;font-weight:600;margin:6px 0 0;"></p>
+            <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:0 0 5px;">TOTAL OMZET ALL TIME</p>
+            <p id="omzetVal" style="color:white;font-size:32px;font-weight:900;margin:0;letter-spacing:-0.5px;">Rp 0</p>
+            <p id="omzetSub" style="color:#BBF7D0;font-size:12px;font-weight:600;margin:6px 0 0;"></p>
           </div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap;">
-            <div style="background:rgba(255,255,255,0.12);border-radius:16px;padding:16px 20px;min-width:150px;">
-              <p style="color:rgba(255,255,255,0.65);font-size:11px;margin:0 0 6px;">Net Profit</p>
-              <p id="netProfit" style="font-size:20px;font-weight:800;color:#BBF7D0;margin:0;">–</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="background:rgba(255,255,255,0.12);border-radius:14px;padding:14px 18px;min-width:140px;">
+              <p style="color:rgba(255,255,255,0.65);font-size:11px;margin:0 0 5px;">Net Profit</p>
+              <p id="netVal" style="font-size:18px;font-weight:800;color:#BBF7D0;margin:0;">–</p>
             </div>
-            <div style="background:rgba(255,255,255,0.12);border-radius:16px;padding:16px 20px;min-width:150px;">
-              <p style="color:rgba(255,255,255,0.65);font-size:11px;margin:0 0 6px;">Pengeluaran</p>
-              <p id="totalPengl" style="font-size:20px;font-weight:800;color:#FCA5A5;margin:0;">–</p>
+            <div style="background:rgba(255,255,255,0.12);border-radius:14px;padding:14px 18px;min-width:140px;">
+              <p style="color:rgba(255,255,255,0.65);font-size:11px;margin:0 0 5px;">Pengeluaran</p>
+              <p id="penglVal" style="font-size:18px;font-weight:800;color:#FCA5A5;margin:0;">–</p>
             </div>
           </div>
         </div>
 
-        <!-- ── KPI ── -->
+        <!-- KPI -->
         <div class="kpi" id="kpiGrid">
-          <!-- diisi JS -->
-          <div style="background:#EFF6FF;border-radius:18px;padding:20px 22px;">
-            <span style="font-size:26px;">📋</span>
-            <p style="font-size:28px;font-weight:900;color:#1565C0;margin:8px 0 2px;line-height:1;">–</p>
-            <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Total Transaksi</p>
+          <div class="kcard" style="background:#EFF6FF;">
+            <div style="font-size:24px;margin-bottom:8px;">📋</div>
+            <div id="k1" style="font-size:26px;font-weight:900;color:#1565C0;line-height:1;">–</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px;">Total Transaksi</div>
+            <div id="k1s" style="font-size:11px;color:#9CA3AF;margin-top:2px;">–</div>
           </div>
-          <div style="background:#F0FDF4;border-radius:18px;padding:20px 22px;">
-            <span style="font-size:26px;">🧑‍💼</span>
-            <p style="font-size:28px;font-weight:900;color:#15803D;margin:8px 0 2px;line-height:1;">–</p>
-            <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Admin Aktif</p>
+          <div class="kcard" style="background:#F0FDF4;">
+            <div style="font-size:24px;margin-bottom:8px;">🧑‍💼</div>
+            <div id="k2" style="font-size:26px;font-weight:900;color:#15803D;line-height:1;">–</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px;">Admin Aktif</div>
+            <div id="k2s" style="font-size:11px;color:#9CA3AF;margin-top:2px;">–</div>
           </div>
-          <div style="background:#FFF7ED;border-radius:18px;padding:20px 22px;">
-            <span style="font-size:26px;">👥</span>
-            <p style="font-size:28px;font-weight:900;color:#C2410C;margin:8px 0 2px;line-height:1;">–</p>
-            <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Total Customer</p>
+          <div class="kcard" style="background:#FFF7ED;">
+            <div style="font-size:24px;margin-bottom:8px;">👥</div>
+            <div id="k3" style="font-size:26px;font-weight:900;color:#C2410C;line-height:1;">–</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px;">Total Customer</div>
+            <div style="font-size:11px;color:#9CA3AF;margin-top:2px;">pelanggan</div>
           </div>
-          <div style="background:#F3E8FF;border-radius:18px;padding:20px 22px;">
-            <span style="font-size:26px;">💡</span>
-            <p style="font-size:16px;font-weight:900;color:#7C3AED;margin:8px 0 2px;line-height:1;" id="avgVal">–</p>
-            <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Avg / Transaksi</p>
+          <div class="kcard" style="background:#F3E8FF;">
+            <div style="font-size:24px;margin-bottom:8px;">💡</div>
+            <div id="k4" style="font-size:16px;font-weight:900;color:#7C3AED;line-height:1;">–</div>
+            <div style="font-size:13px;font-weight:700;color:#374151;margin-top:4px;">Avg / Transaksi</div>
+            <div style="font-size:11px;color:#9CA3AF;margin-top:2px;">per order lunas</div>
           </div>
         </div>
 
-        <!-- ── Charts ── -->
+        <!-- Charts -->
         <div class="chart-row">
           <div class="card">
             <div class="ch"><h3>📊 Tren Omzet Bulanan</h3></div>
-            <div style="padding:16px 20px;">
+            <div style="padding:14px 16px;">
               <canvas id="barChart" height="200"></canvas>
-              <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <div style="width:10px;height:10px;border-radius:3px;background:#15803D;"></div>
-                  <span style="font-size:12px;color:#6B7280;">Omzet</span>
+              <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;">
+                <div style="display:flex;align-items:center;gap:5px;">
+                  <div style="width:9px;height:9px;border-radius:3px;background:#15803D;"></div>
+                  <span style="font-size:11px;color:#6B7280;">Omzet</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <div style="width:10px;height:10px;border-radius:3px;background:#FCA5A5;"></div>
-                  <span style="font-size:12px;color:#6B7280;">Pengeluaran</span>
+                <div style="display:flex;align-items:center;gap:5px;">
+                  <div style="width:9px;height:9px;border-radius:3px;background:#FCA5A5;"></div>
+                  <span style="font-size:11px;color:#6B7280;">Pengeluaran</span>
                 </div>
               </div>
             </div>
           </div>
           <div class="card">
             <div class="ch"><h3>🍕 Komposisi Omzet</h3></div>
-            <div style="padding:16px 20px;">
-              <canvas id="pieChart" height="200"></canvas>
-            </div>
-            <div id="pieLegend" style="padding:0 20px 16px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+            <div style="padding:14px 16px;"><canvas id="pieChart" height="200"></canvas></div>
+            <div id="pieLeg" style="padding:0 16px 14px;display:flex;flex-wrap:wrap;gap:8px;"></div>
           </div>
         </div>
 
-        <!-- ── Bottom row ── -->
+        <!-- Bottom -->
         <div class="bot">
-
           <!-- Performa kasir -->
           <div class="card">
             <div class="ch">
               <h3>🏆 Performa Kasir</h3>
-              <span style="font-size:13px;color:#9CA3AF;">berdasarkan omzet</span>
+              <span style="font-size:12px;color:#9CA3AF;">berdasarkan omzet</span>
             </div>
-            <div style="padding:16px 20px;" id="adminPerf">
-              <p style="text-align:center;color:#9CA3AF;padding:20px 0;">Memuat...</p>
+            <div style="padding:14px 18px;" id="perfList">
+              <p style="text-align:center;color:#9CA3AF;padding:18px 0;">Memuat...</p>
             </div>
           </div>
-
           <!-- Quick menu -->
           <div class="card">
             <div class="ch"><h3>Menu Cepat</h3></div>
-            <div style="padding:16px;">
-              <a class="qlink" href="monitor.html" style="background:#F0FDF4;">
-                <div class="qlink-ico">📋</div>
+            <div style="padding:14px;">
+              <a class="ql" href="monitor.html" style="background:#F0FDF4;">
+                <div class="qi">📋</div>
                 <div>
-                  <p style="font-size:14px;font-weight:700;color:#111827;margin:0;">Monitor Transaksi</p>
-                  <p id="monitorSub" style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">–</p>
+                  <p style="font-size:13px;font-weight:700;color:#111827;margin:0;">Monitor Transaksi</p>
+                  <p id="monSub" style="font-size:11px;color:#9CA3AF;margin:1px 0 0;">–</p>
                 </div>
-                <span style="margin-left:auto;color:#D1D5DB;font-size:18px;">›</span>
+                <span style="margin-left:auto;color:#D1D5DB;">›</span>
               </a>
-              <a class="qlink" href="laporan.html" style="background:#EFF6FF;">
-                <div class="qlink-ico">📊</div>
+              <a class="ql" href="laporan.html" style="background:#EFF6FF;">
+                <div class="qi">📊</div>
                 <div>
-                  <p style="font-size:14px;font-weight:700;color:#111827;margin:0;">Laporan Penjualan</p>
-                  <p style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">Rekap & filter tanggal</p>
+                  <p style="font-size:13px;font-weight:700;color:#111827;margin:0;">Laporan Penjualan</p>
+                  <p style="font-size:11px;color:#9CA3AF;margin:1px 0 0;">Rekap &amp; filter tanggal</p>
                 </div>
-                <span style="margin-left:auto;color:#D1D5DB;font-size:18px;">›</span>
+                <span style="margin-left:auto;color:#D1D5DB;">›</span>
               </a>
-              <a class="qlink" href="akun-admin.html" style="background:#FFF7ED;">
-                <div class="qlink-ico">🧑‍💼</div>
+              <a class="ql" href="akun-admin.html" style="background:#FFF7ED;">
+                <div class="qi">🧑‍💼</div>
                 <div>
-                  <p style="font-size:14px;font-weight:700;color:#111827;margin:0;">Kelola Akun Admin</p>
-                  <p id="adminSub" style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">–</p>
+                  <p style="font-size:13px;font-weight:700;color:#111827;margin:0;">Kelola Akun Admin</p>
+                  <p id="admSub" style="font-size:11px;color:#9CA3AF;margin:1px 0 0;">–</p>
                 </div>
-                <span style="margin-left:auto;color:#D1D5DB;font-size:18px;">›</span>
+                <span style="margin-left:auto;color:#D1D5DB;">›</span>
               </a>
             </div>
           </div>
@@ -186,178 +178,161 @@
 <script src="../js/api.js"></script>
 <script src="../js/layout.js"></script>
 <script>
-const COLORS = ['#15803D','#0288D1','#7C3AED','#F97316','#0891B2'];
-const BULAN  = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'Mei',
-                '06':'Jun','07':'Jul','08':'Ags','09':'Sep','10':'Okt','11':'Nov','12':'Des'};
+const CLR = ['#15803D','#0288D1','#7C3AED','#F97316','#0891B2'];
+const BLN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'Mei','06':'Jun',
+             '07':'Jul','08':'Ags','09':'Sep','10':'Okt','11':'Nov','12':'Des'};
 
-function getKat(nama) {
-  const n = (nama||'').toLowerCase();
+function getKat(n) {
+  n = (n||'').toLowerCase();
   if (n.includes('express')||n.includes('same day')) return 'Express';
   if (n.includes('karpet')||n.includes('sepatu')||n.includes('bedcover')||n.includes('boneka')) return 'Satuan';
   if (n.includes('tambahan')||n.includes('antar')) return 'Tambahan';
   return 'Kiloan';
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const user = await requireAuth(['manager']);
+document.addEventListener('DOMContentLoaded', async function() {
+  var user = await requireAuth(['manager']);
+  if (!user) return;
+
   initManagerLayout(user, 'dashboard');
 
-  const today = new Date().toLocaleDateString('id-ID',
-    {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('todayDate').textContent = today;
-  document.getElementById('greetTitle').textContent =
-    'Halo, ' + (user.nama.split(' ')[0]) + ' 👋';
+  document.getElementById('tgl').textContent =
+    new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('greet').textContent = 'Halo, ' + (user.nama.split(' ')[0]) + ' 👋';
 
   try {
-    const [transaksi, pengeluaran, users, pelanggan] = await Promise.all([
+    var res = await Promise.all([
       api.transaksi.all(),
       api.laporan.pengeluaran(),
       api.user.all(),
       api.pelanggan.all(),
     ]);
+    var trx  = res[0]||[], pengl=res[1]||[], users=res[2]||[], cust=res[3]||[];
 
-    const paid           = transaksi.filter(t => t.sudah_dibayar);
-    const totalOmzet     = paid.reduce((s,t)=>s+(t.total_bayar||0),0);
-    const totalPengl     = pengeluaran.reduce((s,e)=>s+(e.jumlah||0),0);
-    const netP           = totalOmzet - totalPengl;
-    const admins         = users.filter(u=>u.nama_role==='admin');
-    const activeAdmins   = admins.filter(u=>u.aktif).length;
-    const selesai        = transaksi.filter(t=>t.detail?.[0]?.status_pengerjaan==='Selesai').length;
+    var paid    = trx.filter(function(t){return t.sudah_dibayar;});
+    var omzet   = paid.reduce(function(s,t){return s+(t.total_bayar||0);},0);
+    var totPengl= pengl.reduce(function(s,e){return s+(e.jumlah||0);},0);
+    var net     = omzet - totPengl;
+    var admins  = users.filter(function(u){return u.nama_role==='admin';});
+    var aktifAdm= admins.filter(function(u){return u.aktif;}).length;
+    var selesai = trx.filter(function(t){
+      return t.detail&&t.detail[0]&&t.detail[0].status_pengerjaan==='Selesai';
+    }).length;
 
     // Hero
-    document.getElementById('totalOmzet').textContent = formatRupiah(totalOmzet);
-    document.getElementById('omzetSub').textContent   = `dari ${paid.length} transaksi lunas`;
-    document.getElementById('netProfit').textContent  = formatRupiah(netP);
-    document.getElementById('netProfit').style.color  = netP>=0?'#BBF7D0':'#FCA5A5';
-    document.getElementById('totalPengl').textContent = formatRupiah(totalPengl);
+    document.getElementById('omzetVal').textContent = formatRupiah(omzet);
+    document.getElementById('omzetSub').textContent = 'dari ' + paid.length + ' transaksi lunas';
+    document.getElementById('netVal').textContent   = formatRupiah(net);
+    document.getElementById('netVal').style.color   = net>=0 ? '#BBF7D0' : '#FCA5A5';
+    document.getElementById('penglVal').textContent = formatRupiah(totPengl);
 
     // KPI
-    document.getElementById('kpiGrid').innerHTML = `
-      <div style="background:#EFF6FF;border-radius:18px;padding:20px 22px;">
-        <span style="font-size:26px;">📋</span>
-        <p style="font-size:28px;font-weight:900;color:#1565C0;margin:8px 0 2px;line-height:1;">${transaksi.length}</p>
-        <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Total Transaksi</p>
-        <p style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">${selesai} selesai</p>
-      </div>
-      <div style="background:#F0FDF4;border-radius:18px;padding:20px 22px;">
-        <span style="font-size:26px;">🧑‍💼</span>
-        <p style="font-size:28px;font-weight:900;color:#15803D;margin:8px 0 2px;line-height:1;">${activeAdmins}</p>
-        <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Admin Aktif</p>
-        <p style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">dari ${admins.length} admin</p>
-      </div>
-      <div style="background:#FFF7ED;border-radius:18px;padding:20px 22px;">
-        <span style="font-size:26px;">👥</span>
-        <p style="font-size:28px;font-weight:900;color:#C2410C;margin:8px 0 2px;line-height:1;">${pelanggan.length}</p>
-        <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Total Customer</p>
-        <p style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">pelanggan terdaftar</p>
-      </div>
-      <div style="background:#F3E8FF;border-radius:18px;padding:20px 22px;">
-        <span style="font-size:26px;">💡</span>
-        <p style="font-size:16px;font-weight:900;color:#7C3AED;margin:8px 0 2px;line-height:1;">
-          ${formatRupiah(Math.round(totalOmzet/Math.max(1,paid.length)))}</p>
-        <p style="font-size:13px;font-weight:700;color:#374151;margin:0;">Avg / Transaksi</p>
-        <p style="font-size:11px;color:#9CA3AF;margin:2px 0 0;">per order lunas</p>
-      </div>`;
-
-    // Sub labels
-    document.getElementById('monitorSub').textContent = transaksi.length + ' transaksi terdaftar';
-    document.getElementById('adminSub').textContent   = admins.length + ' akun admin';
+    document.getElementById('k1').textContent = trx.length;
+    document.getElementById('k1s').textContent= selesai + ' selesai';
+    document.getElementById('k2').textContent = aktifAdm;
+    document.getElementById('k2s').textContent= 'dari ' + admins.length + ' admin';
+    document.getElementById('k3').textContent = cust.length;
+    document.getElementById('k4').textContent = formatRupiah(Math.round(omzet/Math.max(1,paid.length)));
+    document.getElementById('monSub').textContent = trx.length + ' transaksi';
+    document.getElementById('admSub').textContent = admins.length + ' akun admin';
 
     // Bar chart
-    const bMap = {};
-    paid.forEach(t=>{
-      const m=(t.tanggal_masuk||'').slice(0,7);
-      if(!bMap[m])bMap[m]={omzet:0,pengl:0};
-      bMap[m].omzet+=t.total_bayar||0;
+    var bm={};
+    paid.forEach(function(t){
+      var m=(t.tanggal_masuk||'').slice(0,7);
+      if(!bm[m])bm[m]={o:0,p:0};
+      bm[m].o+=t.total_bayar||0;
     });
-    pengeluaran.forEach(e=>{
-      const m=(e.tanggal||'').slice(0,7);
-      if(!bMap[m])bMap[m]={omzet:0,pengl:0};
-      bMap[m].pengl+=e.jumlah||0;
+    pengl.forEach(function(e){
+      var m=(e.tanggal||'').slice(0,7);
+      if(!bm[m])bm[m]={o:0,p:0};
+      bm[m].p+=e.jumlah||0;
     });
-    const sorted  = Object.entries(bMap).sort(([a],[b])=>a.localeCompare(b));
-    const bLabels = sorted.map(([m])=>BULAN[m.slice(5,7)]??m.slice(5,7));
-    const bOmzet  = sorted.map(([,v])=>v.omzet);
-    const bPengl  = sorted.map(([,v])=>v.pengl);
+    var srt=Object.entries(bm).sort(function(a,b){return a[0]>b[0]?1:-1;});
 
     new Chart(document.getElementById('barChart'),{
       type:'bar',
-      data:{labels:bLabels,datasets:[
-        {label:'Omzet',       data:bOmzet,backgroundColor:'#15803D',borderRadius:5},
-        {label:'Pengeluaran', data:bPengl, backgroundColor:'#FCA5A5',borderRadius:5},
-      ]},
+      data:{
+        labels:srt.map(function(x){return BLN[x[0].slice(5,7)]||x[0].slice(5,7);}),
+        datasets:[
+          {label:'Omzet',       data:srt.map(function(x){return x[1].o;}),backgroundColor:'#15803D',borderRadius:5},
+          {label:'Pengeluaran', data:srt.map(function(x){return x[1].p;}),backgroundColor:'#FCA5A5',borderRadius:5},
+        ]
+      },
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${formatRupiah(c.raw)}`}}},
+          tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+formatRupiah(c.raw);}}}},
         scales:{
-          x:{grid:{display:false},ticks:{font:{size:11},color:'#9CA3AF'}},
-          y:{grid:{color:'#F3F4F6'},ticks:{callback:v=>'Rp'+(v/1000)+'K',font:{size:10},color:'#9CA3AF'}},
+          x:{grid:{display:false},ticks:{font:{size:10},color:'#9CA3AF'}},
+          y:{grid:{color:'#F3F4F6'},ticks:{callback:function(v){return 'Rp'+(v/1000)+'K';},font:{size:9},color:'#9CA3AF'}},
         }
       }
     });
 
     // Pie chart
-    const katMap={};
-    paid.forEach(t=>{
-      const items=t.detail||[];
-      if(items.length){ items.forEach(d=>{const k=getKat(d.lay_nama);katMap[k]=(katMap[k]||0)+(d.sub_harga||0);}); }
-      else { const k=getKat('');katMap[k]=(katMap[k]||0)+(t.total_bayar||0); }
+    var km={};
+    paid.forEach(function(t){
+      var items=t.detail||[];
+      if(items.length){
+        items.forEach(function(d){var k=getKat(d.lay_nama);km[k]=(km[k]||0)+(d.sub_harga||0);});
+      } else {
+        var k=getKat('');km[k]=(km[k]||0)+(t.total_bayar||0);
+      }
     });
-    const pLabels=Object.keys(katMap);
-    const pData=Object.values(katMap);
-    const pTotal=pData.reduce((s,v)=>s+v,0);
+    var pLabels=Object.keys(km), pData=Object.values(km);
+    var pTotal=pData.reduce(function(s,v){return s+v;},0);
 
     new Chart(document.getElementById('pieChart'),{
       type:'doughnut',
-      data:{labels:pLabels,datasets:[{data:pData,backgroundColor:COLORS,borderWidth:2,borderColor:'white'}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:c=>`${c.label}: ${formatRupiah(c.raw)}`}}},cutout:'58%'}
+      data:{labels:pLabels,datasets:[{data:pData,backgroundColor:CLR,borderWidth:2,borderColor:'white'}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:function(c){return c.label+': '+formatRupiah(c.raw);}}}}}
     });
-    document.getElementById('pieLegend').innerHTML=pLabels.map((l,i)=>`
-      <div style="display:flex;align-items:center;gap:5px;">
-        <div style="width:10px;height:10px;border-radius:3px;background:${COLORS[i]};"></div>
-        <span style="font-size:11px;color:#374151;">${l}</span>
-        <span style="font-size:11px;font-weight:700;color:${COLORS[i]};">
-          ${Math.round((pData[i]/Math.max(1,pTotal))*100)}%
-        </span>
-      </div>`).join('');
+    document.getElementById('pieLeg').innerHTML=pLabels.map(function(l,i){
+      return '<div style="display:flex;align-items:center;gap:5px;">'
+        +'<div style="width:9px;height:9px;border-radius:2px;background:'+CLR[i]+';"></div>'
+        +'<span style="font-size:11px;color:#374151;">'+l+'</span>'
+        +'<span style="font-size:11px;font-weight:700;color:'+CLR[i]+';"> '
+        +Math.round((pData[i]/Math.max(1,pTotal))*100)+'%</span>'
+        +'</div>';
+    }).join('');
 
-    // Admin performa
-    const medals=['🥇','🥈','🥉'];
-    const perf = admins.map(a=>({
-      ...a,
-      omzet:    paid.filter(t=>t.id_user===a.id_user).reduce((s,t)=>s+(t.total_bayar||0),0),
-      trxCount: transaksi.filter(t=>t.id_user===a.id_user).length,
-    })).sort((a,b)=>b.omzet-a.omzet);
+    // Performa kasir
+    var medals=['🥇','🥈','🥉'];
+    var perf=admins.map(function(a){
+      return Object.assign({},a,{
+        omzet:paid.filter(function(t){return t.id_user===a.id_user;})
+               .reduce(function(s,t){return s+(t.total_bayar||0);},0),
+        cnt:  trx.filter(function(t){return t.id_user===a.id_user;}).length,
+      });
+    }).sort(function(a,b){return b.omzet-a.omzet;});
 
-    document.getElementById('adminPerf').innerHTML = perf.length ? perf.map((a,i)=>{
-      const pct = totalOmzet>0 ? Math.round((a.omzet/totalOmzet)*100) : 0;
-      return `
-        <div style="margin-bottom:18px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span style="font-size:18px;">${medals[i]||'👤'}</span>
-              <div>
-                <p style="font-size:13px;font-weight:700;color:#111827;margin:0;">
-                  ${a.first_name} ${a.last_name}
-                </p>
-                <p style="font-size:11px;color:#9CA3AF;margin:0;">
-                  ${a.trxCount} transaksi · ${a.aktif?'Aktif':'Nonaktif'}
-                </p>
-              </div>
-            </div>
-            <strong style="font-size:13px;color:#15803D;">${formatRupiah(a.omzet)}</strong>
-          </div>
-          <div style="height:8px;border-radius:4px;background:#F3F4F6;overflow:hidden;">
-            <div style="height:100%;border-radius:4px;width:${pct}%;
-              background:${i===0?'#15803D':i===1?'#0288D1':'#86EFAC'};"></div>
-          </div>
-          <p style="font-size:10px;color:#9CA3AF;margin:3px 0 0;">${pct}% dari total omzet</p>
-        </div>`;
-    }).join('') : '<p style="text-align:center;color:#9CA3AF;padding:20px 0;">Belum ada data</p>';
+    document.getElementById('perfList').innerHTML = perf.length
+      ? perf.map(function(a,i){
+          var pct=omzet>0?Math.round((a.omzet/omzet)*100):0;
+          return '<div style="margin-bottom:16px;">'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">'
+            +'<div style="display:flex;align-items:center;gap:8px;">'
+            +'<span style="font-size:16px;">'+(medals[i]||'👤')+'</span>'
+            +'<div>'
+            +'<p style="font-size:13px;font-weight:700;color:#111827;margin:0;">'+a.first_name+' '+a.last_name+'</p>'
+            +'<p style="font-size:11px;color:#9CA3AF;margin:0;">'+a.cnt+' trx · '+(a.aktif?'Aktif':'Nonaktif')+'</p>'
+            +'</div></div>'
+            +'<strong style="font-size:12px;color:#15803D;">'+formatRupiah(a.omzet)+'</strong>'
+            +'</div>'
+            +'<div style="height:7px;border-radius:4px;background:#F3F4F6;overflow:hidden;">'
+            +'<div style="height:100%;border-radius:4px;width:'+pct+'%;'
+            +'background:'+(i===0?'#15803D':i===1?'#0288D1':'#86EFAC')+';"></div>'
+            +'</div>'
+            +'<p style="font-size:10px;color:#9CA3AF;margin:2px 0 0;">'+pct+'% dari total omzet</p>'
+            +'</div>';
+        }).join('')
+      : '<p style="text-align:center;color:#9CA3AF;padding:18px 0;">Belum ada data</p>';
 
   } catch(err) {
     showToast('Gagal memuat: ' + err.message, 'error');
+    console.error(err);
   }
 });
 </script>

@@ -1,100 +1,66 @@
-from flask import Blueprint, request, session, jsonify
-import db
+from flask import Blueprint, request, jsonify, session
 import bcrypt
+from db import query
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route("/login", methods=["POST"])
 def login():
+    data     = request.get_json() or {}
+    email    = (data.get("email") or "").strip()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify({"error": "Email dan password wajib diisi"}), 400
+
+    user = query(
+        """SELECT u.id_user, u.first_name, u.last_name, u.email, u.password,
+                  r.nama_role
+           FROM users u
+           JOIN roles r ON u.roles_id_role = r.id_role
+           WHERE u.email = %s""",
+        (email,), fetchall=False
+    )
+
+    if not user:
+        return jsonify({"error": "Email atau password salah"}), 401
+
+    pw_match = False
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "Data tidak valid"}), 400
-            
-        email = data.get('email', '').strip()
-        password = data.get('password', '')
+        pw_match = bcrypt.checkpw(password.encode(), user["password"].encode())
+    except Exception:
+        pw_match = (password == user["password"])
 
-        if not email or not password:
-            return jsonify({"error": "Email dan password wajib diisi"}), 400
+    if not pw_match:
+        return jsonify({"error": "Email atau password salah"}), 401
 
-        # Query SQL disesuaikan: Kolom u.aktif dihapus karena tidak ada di tabel users
-        sql = """
-            SELECT u.*, r.nama_role AS role 
-            FROM users u
-            JOIN roles r ON u.roles_id_role = r.id_role
-            WHERE u.email = %s
-        """
-        user = db.query(sql, (email,), fetchall=False)
+    # PENTING: lowercase role agar konsisten di frontend
+    role = (user["nama_role"] or "").strip().lower()
 
-        if not user:
-            return jsonify({"error": "Email tidak terdaftar"}), 401
+    result = {
+        "id":    user["id_user"],
+        "nama":  f"{user['first_name']} {user['last_name']}".strip(),
+        "email": user["email"],
+        "role":  role,
+    }
 
-        # Validasi password menggunakan bcrypt
-        if not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-            return jsonify({"error": "Password salah"}), 401
+    session["user_id"]   = result["id"]
+    session["user_nama"] = result["nama"]
+    session["role"]      = role
 
-        # Set session di server Flask
-        session['user_id'] = user['id_user']
-        session['role'] = user['role']
+    return jsonify(result)
 
-        # Gabungkan nama depan dan belakang agar aman di frontend
-        nama_lengkap = f"{user['first_name']} {user['last_name']}".strip()
-
-        return jsonify({
-            "id": user['id_user'],            
-            "id_user": user['id_user'],
-            "first_name": user['first_name'],
-            "last_name": user['last_name'],
-            "nama": nama_lengkap,             
-            "email": user['email'],
-            "role": user['role']
-        }), 200
-
-    except Exception as e:
-        print(f"[AUTH LOGIN CRASH]: {e}")
-        return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
-
-
-@auth_bp.route('/me', methods=['GET'])
-def me():
-    try:
-        if 'user_id' not in session:
-            return jsonify({"error": "Belum login atau session habis"}), 401
-
-        # Query SQL disesuaikan: Kolom u.aktif dihapus agar tidak crash saat validasi session dashboard
-        sql = """
-            SELECT u.*, r.nama_role AS role 
-            FROM users u
-            JOIN roles r ON u.roles_id_role = r.id_role
-            WHERE u.id_user = %s
-        """
-        user = db.query(sql, (session['user_id'],), fetchall=False)
-
-        if not user:
-            return jsonify({"error": "User tidak ditemukan"}), 401
-
-        nama_lengkap = f"{user['first_name']} {user['last_name']}".strip()
-
-        return jsonify({
-            "id": user['id_user'],            
-            "id_user": user['id_user'],
-            "first_name": user['first_name'],
-            "last_name": user['last_name'],
-            "nama": nama_lengkap,             
-            "email": user['email'],
-            "role": user['role']
-        }), 200
-
-    except Exception as e:
-        print(f"[AUTH ME CRASH]: {e}")
-        return jsonify({"error": "Gagal memuat data session"}), 500
-
-
-@auth_bp.route('/logout', methods=['POST'])
+@auth_bp.route("/logout", methods=["POST"])
 def logout():
-    try:
-        session.clear()
-        return jsonify({"message": "Logout berhasil"}), 200
-    except Exception as e:
-        print(f"[AUTH LOGOUT CRASH]: {e}")
-        return jsonify({"error": "Gagal melakukan logout"}), 500
+    session.clear()
+    return jsonify({"message": "Logout berhasil"})
+
+@auth_bp.route("/me", methods=["GET"])
+def me():
+    if "user_id" not in session:
+        return jsonify({"error": "Belum login"}), 401
+    return jsonify({
+        "id":   session["user_id"],
+        "nama": session["user_nama"],
+        "role": session["role"],
+    })
