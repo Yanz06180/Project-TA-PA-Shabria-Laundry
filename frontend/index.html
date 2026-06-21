@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shabria Laundry — Login</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#EFF6FF,#F0F7FF,#E8F5E9);
+      padding:20px;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    }
+    .card{
+      display:flex;width:100%;max-width:900px;background:white;
+      border-radius:28px;box-shadow:0 20px 60px rgba(21,101,192,0.14);
+      overflow:hidden;min-height:520px;
+    }
+    .left{
+      flex:0 0 340px;
+      background:linear-gradient(155deg,#1565C0,#0288D1);
+      display:flex;flex-direction:column;align-items:center;
+      justify-content:center;padding:44px 32px;
+    }
+    .left img{
+      width:86px;height:86px;border-radius:20px;background:white;
+      padding:8px;object-fit:contain;margin-bottom:16px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.15);
+    }
+    .left h1{color:white;font-size:22px;font-weight:900;text-align:center;margin-bottom:6px;}
+    .left p{color:rgba(255,255,255,0.7);font-size:13px;text-align:center;line-height:1.6;margin-bottom:28px;}
+    .rp{
+      display:flex;align-items:center;gap:10px;width:100%;
+      background:rgba(255,255,255,0.14);border-radius:12px;
+      padding:11px 14px;margin-bottom:8px;color:white;
+    }
+    .rp em{font-size:18px;font-style:normal;}
+    .rp strong{font-size:12px;font-weight:700;display:block;}
+    .rp small{font-size:10px;color:rgba(255,255,255,0.65);}
+    .right{flex:1;padding:40px 36px;display:flex;flex-direction:column;justify-content:center;}
+    .right .sub{font-size:13px;color:#9CA3AF;margin-bottom:4px;}
+    .right h2{font-size:22px;font-weight:900;color:#111827;margin-bottom:26px;}
+    .fld{margin-bottom:15px;}
+    .fld label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;}
+    .ib{
+      display:flex;align-items:center;gap:8px;padding:0 13px;
+      background:#F9FAFB;border-radius:12px;border:1.5px solid #E5E7EB;height:46px;
+      transition:border-color 0.15s;
+    }
+    .ib:focus-within{border-color:#1565C0;background:white;}
+    .ib span{font-size:15px;flex-shrink:0;}
+    .ib input{flex:1;background:transparent;border:none;outline:none;font-size:14px;color:#111827;}
+    .ib button{background:none;border:none;cursor:pointer;font-size:15px;padding:0;}
+    #errMsg{font-size:12px;color:#EF4444;text-align:center;margin-bottom:10px;display:none;padding:8px;background:#FEF2F2;border-radius:8px;}
+    .btn-login{
+      width:100%;height:46px;border-radius:12px;border:none;
+      background:linear-gradient(135deg,#1565C0,#0288D1);
+      color:white;font-size:15px;font-weight:700;cursor:pointer;
+      box-shadow:0 4px 14px rgba(21,101,192,0.3);margin-bottom:22px;
+      transition:opacity 0.15s;
+    }
+    .btn-login:hover{opacity:0.9;}
+    .btn-login:disabled{background:#90CAF9;cursor:not-allowed;opacity:1;}
+    .dbox{background:#F8FAFF;border-radius:14px;border:1px solid #DBEAFE;padding:13px 15px;}
+    .dbox p{font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;}
+    .di{
+      display:flex;align-items:center;justify-content:space-between;
+      width:100%;padding:8px 12px;border-radius:10px;
+      background:white;border:1px solid #E5E7EB;cursor:pointer;
+      font-size:12px;color:#374151;font-weight:600;margin-bottom:5px;
+      transition:background 0.12s;
+    }
+    .di:last-child{margin-bottom:0;}
+    .di:hover{background:#F9FAFB;}
+    .di span{font-size:10px;color:#9CA3AF;font-weight:400;}
+    @media(max-width:680px){
+      .left{display:none;}
+      .right{padding:28px 20px;}
+    }
+    @media(max-width:430px){
+      body{padding:0;align-items:stretch;}
+      .card{border-radius:0;min-height:100vh;}
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <!-- Kiri -->
+  <div class="left">
+    <img src="assets/logo.jpg" alt="Logo" onerror="this.style.display='none'"/>
+    <h1>Shabria Laundry</h1>
+    <p>Sistem Manajemen Internal<br>untuk Kasir &amp; Manager</p>
+    <div class="rp">
+      <em>🛡️</em>
+      <div><strong>Admin / Kasir</strong><small>Kelola transaksi &amp; laporan</small></div>
+    </div>
+    <div class="rp">
+      <em>👑</em>
+      <div><strong>Manager / Owner</strong><small>Monitor &amp; analisis bisnis</small></div>
+    </div>
+  </div>
+
+  <!-- Kanan -->
+  <div class="right">
+    <p class="sub">Selamat datang kembali 👋</p>
+    <h2>Masuk ke Akun Anda</h2>
+
+    <form id="loginForm">
+      <div class="fld">
+        <label>Email</label>
+        <div class="ib">
+          <span>✉️</span>
+          <input type="email" id="email" placeholder="Email akun Anda" autocomplete="email" required/>
+        </div>
+      </div>
+      <div class="fld">
+        <label>Password</label>
+        <div class="ib">
+          <span>🔒</span>
+          <input type="password" id="pw" placeholder="Password Anda" required/>
+          <button type="button" id="tgl" title="Tampilkan">👁️</button>
+        </div>
+      </div>
+      <p id="errMsg"></p>
+      <button type="submit" class="btn-login" id="loginBtn">Masuk</button>
+    </form>
+
+    <div class="dbox">
+      <p>🔑 Akun Demo — klik untuk isi otomatis:</p>
+      <button class="di" type="button" onclick="fill('siti@shabria.com','admin123')">
+        Siti Aminah (Kasir) <span>siti@shabria.com</span>
+      </button>
+      <button class="di" type="button" onclick="fill('budi@shabria.com','admin123')">
+        Budi Kurniawan (Kasir) <span>budi@shabria.com</span>
+      </button>
+      <button class="di" type="button" onclick="fill('manager@shabria.com','manager123')">
+        Hendra Kusuma (Manager) <span>manager@shabria.com</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://localhost:5000/api';
+
+// Kalau sudah login, langsung masuk
+(function(){
+  try {
+    var u = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    if (u && u.role) { go(u.role); }
+  } catch(e) {}
+})();
+
+function go(role) {
+  var r = (role || '').toLowerCase();
+  if (r === 'manager' || r === 'owner') {
+    window.location.href = 'manager/dashboard.html';
+  } else {
+    window.location.href = 'admin/dashboard.html';
+  }
+}
+
+function fill(e, p) {
+  document.getElementById('email').value = e;
+  document.getElementById('pw').value    = p;
+}
+
+document.getElementById('tgl').onclick = function() {
+  var f = document.getElementById('pw');
+  f.type = f.type === 'password' ? 'text' : 'password';
+};
+
+document.getElementById('loginForm').onsubmit = async function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('loginBtn');
+  var err = document.getElementById('errMsg');
+  var email = document.getElementById('email').value.trim();
+  var pw    = document.getElementById('pw').value;
+
+  btn.textContent = 'Masuk...';
+  btn.disabled    = true;
+  err.style.display = 'none';
+
+  try {
+    var res = await fetch(BASE + '/auth/login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: pw }),
+    });
+    var data = await res.json().catch(function(){ return {}; });
+
+    if (!res.ok) throw new Error(data.error || 'Login gagal. Periksa email/password.');
+
+    // Normalisasi role ke lowercase
+    data.role = (data.role || '').toLowerCase();
+
+    // Simpan ke sessionStorage — KUNCI agar tidak redirect loop
+    sessionStorage.setItem('currentUser', JSON.stringify(data));
+    console.log('Login sukses, role:', data.role);
+
+    go(data.role);
+  } catch(ex) {
+    err.textContent   = ex.message;
+    err.style.display = 'block';
+    btn.textContent   = 'Masuk';
+    btn.disabled      = false;
+  }
+};
+</script>
+</body>
+</html>
