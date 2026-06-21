@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor Transaksi — Manager Shabria Laundry</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <style>
+    .page-inner { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
+
+    .kpi-strip {
+      display: flex;
+      gap: 12px;
+      background: linear-gradient(135deg, #15803D, #16A34A);
+      border-radius: 24px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+    .kpi-box {
+      flex: 1; min-width: 100px;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 10px; border-radius: 16px;
+      cursor: pointer; border: none;
+      background: rgba(255,255,255,0.15);
+      transition: all 0.15s;
+    }
+    .kpi-box.active { background: white; box-shadow: 0 3px 12px rgba(0,0,0,0.14); }
+
+    .trx-card {
+      background: white;
+      border-radius: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .trx-card-inner { padding: 16px 20px; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 10px;
+      font-size: 12px; font-weight: 800;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="display:flex; height:100vh; overflow:hidden; background:#F0FFF4;">
+    <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0;"></div>
+    <div id="overlay" onclick="closeSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:198;"></div>
+    <div id="mobileSidebar" style="display:none; position:fixed; top:0; left:0; bottom:0; width:260px; z-index:199;"></div>
+
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0;">
+      <header id="topHeader"></header>
+
+      <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
+        <div class="page-inner">
+
+          <!-- Title + Refresh -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h1 style="font-size:22px; font-weight:900; color:#111827;">Monitor Transaksi</h1>
+              <p id="lastRefresh" style="font-size:13px; color:#9CA3AF; margin-top:4px;"></p>
+            </div>
+            <button onclick="loadData()" class="btn" style="background:#F0FDF4; color:#15803D; border:1.5px solid #BBF7D0;">
+              🔄 Refresh
+            </button>
+          </div>
+
+          <!-- KPI Strip -->
+          <div class="kpi-strip" id="kpiStrip">
+            <!-- diisi JS -->
+          </div>
+
+          <!-- Search + Filter -->
+          <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+            <div class="search-bar" style="flex:1; min-width:240px; background:white;">
+              <span>🔍</span>
+              <input type="text" id="searchInput"
+                placeholder="Cari ID, nama customer, kasir..."
+                oninput="applyFilter()" />
+            </div>
+            <select id="statusFilter" onchange="applyFilter()"
+              style="padding:0 16px; border-radius:12px; border:1.5px solid #E5E7EB; background:white; font-size:14px; color:#374151; cursor:pointer; height:46px;">
+              <option value="">Semua Status</option>
+              <option value="Antrean">🕐 Antrean</option>
+              <option value="Dicuci">🫧 Dicuci</option>
+              <option value="Disetrika">🔥 Disetrika</option>
+              <option value="Siap">🛍️ Siap</option>
+              <option value="Selesai">✅ Selesai</option>
+            </select>
+          </div>
+
+          <p id="resultInfo" style="font-size:12px; color:#9CA3AF; margin-bottom:16px;"></p>
+
+          <!-- Cards -->
+          <div id="trxList">
+            <p style="text-align:center; color:#9CA3AF; padding:60px 0;">Memuat data...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    const STATUS_CFG = {
+      Antrean:    { emoji:'🕐', dot:'#9CA3AF', bg:'#F3F4F6', text:'#374151', border:'#E5E7EB',  stripe:'#9CA3AF' },
+      Dicuci:     { emoji:'🫧', dot:'#3B82F6', bg:'#DBEAFE', text:'#1E40AF', border:'#BFDBFE',  stripe:'#3B82F6' },
+      Disetrika:  { emoji:'🔥', dot:'#F97316', bg:'#FFEDD5', text:'#C2410C', border:'#FED7AA',  stripe:'#F97316' },
+      Siap:       { emoji:'🛍️', dot:'#22C55E', bg:'#DCFCE7', text:'#15803D', border:'#A7F3D0',  stripe:'#22C55E' },
+      Selesai:    { emoji:'✅', dot:'#10B981', bg:'#D1FAE5', text:'#065F46', border:'#6EE7B7',  stripe:'#10B981' },
+      Dibatalkan: { emoji:'❌', dot:'#EF4444', bg:'#FEE2E2', text:'#991B1B', border:'#FECACA',  stripe:'#EF4444' },
+    };
+    const MAIN_STATUS = ['Antrean','Dicuci','Disetrika','Siap','Selesai'];
+
+    let allTrx      = [];
+    let activeKpi   = '';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await requireAuth(['manager']);
+      initManagerLayout(user, 'monitor');
+      await loadData();
+    });
+
+    async function loadData() {
+      try {
+        allTrx = await api.transaksi.all();
+        document.getElementById('lastRefresh').textContent =
+          `${allTrx.length} transaksi · Diperbarui ${new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}`;
+        renderKpi();
+        applyFilter();
+      } catch (err) {
+        showToast('Gagal memuat: ' + err.message, 'error');
+      }
+    }
+
+    function getStatus(trx) {
+      return trx.detail?.[0]?.status_pengerjaan ?? 'Antrean';
+    }
+
+    function renderKpi() {
+      document.getElementById('kpiStrip').innerHTML = MAIN_STATUS.map(s => {
+        const cfg   = STATUS_CFG[s];
+        const count = allTrx.filter(t => getStatus(t) === s).length;
+        const isActive = activeKpi === s;
+        return `
+          <button class="kpi-box ${isActive?'active':''}" onclick="toggleKpi('${s}', this)">
+            <span style="font-size:20px; line-height:1;">${cfg.emoji}</span>
+            <span style="font-size:20px; font-weight:900; color:${isActive?cfg.text:'white'}; margin-top:4px;">${count}</span>
+            <span style="font-size:10px; font-weight:700; color:${isActive?cfg.text:'rgba(255,255,255,0.75)'}; text-align:center; margin-top:3px; line-height:1.3;">${s}</span>
+          </button>`;
+      }).join('');
+    }
+
+    function toggleKpi(s, el) {
+      activeKpi = activeKpi === s ? '' : s;
+      document.getElementById('statusFilter').value = activeKpi;
+      renderKpi();
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const q      = document.getElementById('searchInput').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value || activeKpi;
+
+      const filtered = allTrx.filter(t => {
+        const matchStatus = !status || getStatus(t) === status;
+        const matchQ = !q ||
+          (t.id_transaksi||'').toLowerCase().includes(q) ||
+          (t.pelanggan_nama||'').toLowerCase().includes(q) ||
+          (t.kasir_nama||'').toLowerCase().includes(q);
+        return matchStatus && matchQ;
+      }).sort((a,b) => (b.tanggal_masuk||'').localeCompare(a.tanggal_masuk||''));
+
+      document.getElementById('resultInfo').textContent =
+        `Menampilkan ${filtered.length} transaksi`;
+
+      renderCards(filtered);
+    }
+
+    function relTime(dateStr) {
+      if (!dateStr) return '-';
+      const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+      if (diff < 1)    return 'Baru saja';
+      if (diff < 60)   return `${diff} mnt lalu`;
+      if (diff < 1440) return `${Math.floor(diff/60)} jam lalu`;
+      return `${Math.floor(diff/1440)} hari lalu`;
+    }
+
+    function renderCards(list) {
+      const el = document.getElementById('trxList');
+      if (!list.length) {
+        el.innerHTML = `<div style="text-align:center; padding:60px 0;">
+          <span style="font-size:48px;">📋</span>
+          <p style="color:#9CA3AF; margin-top:12px; font-size:14px;">Tidak ada transaksi ditemukan</p>
+        </div>`;
+        return;
+      }
+
+      el.innerHTML = list.map(trx => {
+        const status = getStatus(trx);
+        const cfg    = STATUS_CFG[status] ?? STATUS_CFG.Antrean;
+        const layanan = trx.detail?.map(d=>d.lay_nama).join(', ') || '-';
+        return `
+          <div class="trx-card" style="border:1px solid ${cfg.border};">
+            <div style="height:5px; background:${cfg.stripe};"></div>
+            <div class="trx-card-inner">
+              <!-- Row 1: ID + Badge -->
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <div>
+                  <p style="font-size:15px; font-weight:900; color:#111827; letter-spacing:-0.3px;">${trx.id_transaksi}</p>
+                  <p style="font-size:11px; color:#9CA3AF; margin-top:2px;">🕐 ${relTime(trx.tanggal_masuk)}</p>
+                </div>
+                <span class="status-badge" style="background:${cfg.bg}; color:${cfg.text}; border:1.5px solid ${cfg.border};">
+                  <span style="width:8px; height:8px; border-radius:50%; background:${cfg.dot}; display:inline-block;"></span>
+                  ${cfg.emoji} ${status}
+                </span>
+              </div>
+
+              <!-- Row 2: Customer + Price -->
+              <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+                <div style="width:46px; height:46px; border-radius:14px; background:#F0FFF4; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">🧺</div>
+                <div style="flex:1; min-width:0;">
+                  <p style="font-size:14px; font-weight:800; color:#111827;">${trx.pelanggan_nama || '-'}</p>
+                  <p style="font-size:12px; color:#6B7280; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${layanan}</p>
+                </div>
+                <div style="text-align:right; flex-shrink:0;">
+                  <p style="font-size:14px; font-weight:900; color:#15803D;">${formatRupiah(trx.total_bayar)}</p>
+                  <p style="font-size:10px; font-weight:700; margin-top:3px; color:${trx.sudah_dibayar?'#10B981':'#F59E0B'};">
+                    ${trx.sudah_dibayar?'✓ Lunas':'⏳ Belum bayar'}
+                  </p>
+                </div>
+              </div>
+
+              <div style="height:1px; background:#F3F4F6; margin-bottom:10px;"></div>
+
+              <!-- Row 3: Meta -->
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:14px;">👤</span>
+                  <span style="font-size:12px; color:#6B7280;">${trx.kasir_nama || '-'}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  ${trx.mtd_pembayaran ? `
+                    <span style="font-size:11px; font-weight:600; color:#6B7280; background:#F3F4F6; border-radius:8px; padding:3px 8px;">
+                      ${trx.mtd_pembayaran === 'Cash' ? '💵' : '📱'} ${trx.mtd_pembayaran}
+                    </span>` : ''}
+                  <span style="font-size:11px; color:#9CA3AF;">Est. ${trx.est_tanggal_selesai || '-'}</span>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
