@@ -307,7 +307,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const user = await requireAuth(['manager']);
+      const user = await requireAuth(['manager', 'owner']);
       initManagerLayout(user, 'laporan');
       await loadData();
     });

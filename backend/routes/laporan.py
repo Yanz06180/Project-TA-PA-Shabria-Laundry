@@ -57,7 +57,7 @@ def per_kategori():
         """SELECT j.jenis_nama, SUM(dt.sub_harga) AS total
            FROM detail_transaksi dt
            JOIN layanan l ON dt.layanan_id_layanan = l.id_layanan
-           JOIN jenis_barang j ON l.jenis_barang_id_jenis_barang = j.id_jenis_barang
+           JOIN jenis_barang j ON l.id_jenis_barang = j.id_jenis_barang
            JOIN transaksi t ON dt.transaksi_id_transaksi = t.id_transaksi
            WHERE DATE(t.tanggal_masuk) BETWEEN %s AND %s AND t.sudah_dibayar=1
            GROUP BY j.jenis_nama ORDER BY total DESC""",

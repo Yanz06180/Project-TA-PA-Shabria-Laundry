@@ -1,8 +1,21 @@
-const BASE_URL = 'http://localhost:5000/api';
+/* ─────────────────────────────────────────────────────────────
+   layout.js
+   PENTING: BASE_URL, requireAuth, doLogout, formatRupiah, dan
+   showToast SENGAJA tidak dideklarasikan ulang di sini karena
+   sudah ada di api.js. File ini wajib dimuat SETELAH api.js:
+     <script src="../js/api.js"></script>
+     <script src="../js/layout.js"></script>
+   Mendeklarasikan ulang `const BASE_URL` di dua file yang
+   berbagi global scope yang sama akan menyebabkan SyntaxError
+   ("Identifier 'BASE_URL' has already been declared") saat
+   layout.js dimuat, sehingga SELURUH isi layout.js (termasuk
+   initAdminLayout/initManagerLayout yang merender sidebar,
+   header, dan tombol logout) gagal dieksekusi.
+   ───────────────────────────────────────────────────────────── */
 
 const ADMIN_NAV = [
   { href:'dashboard.html',  icon:'📊', label:'Dashboard'       },
-  { href:'customers.html',  icon:'👥', label:'Customer'         },
+  { href:'customer.html',  icon:'👥', label:'Customer'         },
   { href:'transaksi.html',  icon:'🧾', label:'Transaksi'        },
   { href:'laporan.html',    icon:'📈', label:'Laporan'          },
   { href:'layanan.html',    icon:'⚙️',  label:'Kelola Layanan'  },
@@ -62,7 +75,7 @@ function _sidebarHTML(navItems, user, accent, accentLight, roleLabel) {
 
   // Logout
   html += '<div style="padding:10px 8px;border-top:1px solid #F3F4F6;">'
-    + '<button onclick="doLogout()" style="display:flex;align-items:center;gap:10px;'
+    + '<button onclick="openLogoutModal()" style="display:flex;align-items:center;gap:10px;'
     + 'width:100%;padding:10px 12px;border-radius:11px;border:none;cursor:pointer;'
     + 'background:#FEF2F2;color:#DC2626;font-size:13px;font-weight:700;">🚪 Keluar</button>'
     + '</div>';
@@ -93,7 +106,7 @@ function _headerHTML(user, pageLabel, accent, accentLight, roleLabel) {
     + '<p style="font-size:13px;font-weight:700;color:#111827;margin:0;">' + (user ? user.nama : '') + '</p>'
     + '<p style="font-size:10px;color:#9CA3AF;margin:0;">' + roleLabel + '</p>'
     + '</div>'
-    + '<button onclick="doLogout()" style="display:flex;align-items:center;gap:5px;'
+    + '<button onclick="openLogoutModal()" style="display:flex;align-items:center;gap:5px;'
     + 'padding:7px 12px;border-radius:10px;background:#FEF2F2;border:none;cursor:pointer;'
     + 'color:#DC2626;font-size:12px;font-weight:600;">🚪 <span class="logout-txt">Keluar</span></button>'
     + '</div>'
@@ -171,54 +184,36 @@ function closeSidebar() {
   if (m) m.style.display = 'none';
 }
 
-async function doLogout() {
-  try { await _req('POST', '/auth/logout', {}); } catch(e) {}
-  sessionStorage.removeItem('currentUser');
-  window.location.href = '../index.html';
-}
-
-function formatRupiah(n) {
-  return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n||0);
-}
-
-function showToast(msg, type) {
-  var c = document.getElementById('toast-container');
-  if (!c) { c = document.createElement('div'); c.id='toast-container'; document.body.appendChild(c); }
-  var el = document.createElement('div');
-  el.className = 'toast '+(type||'');
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(function(){ if(el.parentNode) el.remove(); }, 3000);
-}
-
-async function requireAuth(roles) {
-  var stored = sessionStorage.getItem('currentUser');
-  if (stored) {
-    try {
-      var u = JSON.parse(stored);
-      if (u && u.role) {
-        u.role = u.role.toLowerCase();
-        if (roles && roles.length && !roles.includes(u.role)) {
-          sessionStorage.removeItem('currentUser');
-          window.location.href = '../index.html';
-          return null;
-        }
-        return u;
-      }
-    } catch(e) { sessionStorage.removeItem('currentUser'); }
-  }
-  try {
-    var u = await _req('GET', '/auth/me', null);
-    u.role = (u.role||'').toLowerCase();
-    sessionStorage.setItem('currentUser', JSON.stringify(u));
-    if (roles && roles.length && !roles.includes(u.role)) {
-      sessionStorage.removeItem('currentUser');
-      window.location.href = '../index.html';
-      return null;
-    }
-    return u;
-  } catch(e) {
-    window.location.href = '../index.html';
-    return null;
+// --- CUSTOM LOGOUT MODAL ---
+function openLogoutModal() {
+  var modal = document.getElementById('customLogoutModal');
+  if (!modal) {
+    // Kalau modal belum ada, kita inject HTML-nya ke dalam body
+    var html = `
+      <div id="customLogoutModal" style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:20px; font-family:sans-serif;">
+        <div style="background:#EFF6FF; border-radius:16px; padding:30px 24px; text-align:center; max-width:320px; width:100%; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.5); color:white;">
+          
+          <div style="font-size:55px; margin-bottom:12px; line-height:1;">🚪</div>
+          <h3 style="margin:0 0 10px 0; font-size:17px; color:#111827; font-weight:700;">Apakah Anda yakin ingin keluar?</h3>
+          
+          <div style="display:flex; gap:12px;">
+            <button onclick="closeLogoutModal()" style="flex:1; padding:12px; border-radius:8px; border:1px solid #BFDBFE; background:transparent; color:#1565C0; font-weight:600; cursor:pointer; font-size:13px; transition:0.2s;">Tidak Sekarang</button>
+            <button onclick="doLogout()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#FEF2F2; color:#DC2626; font-weight:700; cursor:pointer; font-size:13px; transition:0.2s;">Keluar</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } else {
+    // Kalau udah ada, tinggal ditampilin lagi
+    modal.style.display = 'flex';
   }
 }
+
+function closeLogoutModal() {
+  var modal = document.getElementById('customLogoutModal');
+  if (modal) modal.style.display = 'none';
+}
+/* doLogout, formatRupiah, showToast, dan requireAuth TIDAK
+   didefinisikan di sini lagi — gunakan versi dari api.js
+   (file ini sudah dimuat setelah api.js di setiap halaman). */

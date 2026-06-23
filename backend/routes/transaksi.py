@@ -5,7 +5,19 @@ import random, string
 transaksi_bp = Blueprint("transaksi", __name__)
 
 def gen_id():
-    return "TRX-" + "".join(random.choices(string.digits, k=3))
+    # 1. Cari ID terakhir yang ada di database
+    last_trx = query("SELECT id_transaksi FROM transaksi ORDER BY id_transaksi DESC LIMIT 1", fetchall=False)
+    
+    if last_trx and last_trx["id_transaksi"].startswith("TRX-"):
+        # 2. Ambil angka di belakang 'TRX-', ubah jadi integer, lalu tambah 1
+        last_num = int(last_trx["id_transaksi"].split("-")[1])
+        new_num = last_num + 1
+    else:
+        # 3. Kalau database masih kosong atau belum ada transaksi
+        new_num = 1
+        
+    # 4. Format angka pakai leading zero (3 digit), jadi 1 -> 001, 15 -> 015
+    return f"TRX-{new_num:03d}"
 
 @transaksi_bp.route("/", methods=["GET"])
 def get_all():
@@ -20,7 +32,7 @@ def get_all():
                   CONCAT(u.first_name,' ',u.last_name) AS kasir_nama,
                   u.id_user
            FROM transaksi t
-           JOIN pelanggan p ON t.pelanggan_id_pelanggan = p.id_pelanggan
+           LEFT JOIN pelanggan p ON t.pelanggan_id_pelanggan = p.id_pelanggan
            JOIN users u     ON t.users_id_user = u.id_user
            WHERE DATE(t.tanggal_masuk) BETWEEN %s AND %s
            ORDER BY t.tanggal_masuk DESC""",
@@ -44,7 +56,7 @@ def get_one(id):
                   p.pel_no_telepon, p.pel_alamat,
                   CONCAT(u.first_name,' ',u.last_name) AS kasir_nama
            FROM transaksi t
-           JOIN pelanggan p ON t.pelanggan_id_pelanggan = p.id_pelanggan
+           Left JOIN pelanggan p ON t.pelanggan_id_pelanggan = p.id_pelanggan
            JOIN users u     ON t.users_id_user = u.id_user
            WHERE t.id_transaksi = %s""",
         (id,), fetchall=False
@@ -86,12 +98,15 @@ def create():
              item.get("jumlah_barang", 1), item.get("berat_barang", 0),
              item.get("catatan", ""))
         )
+        # Di dalam loop items (transaksi.py):
         for addon_id in item.get("addons", []):
-            ao = query("SELECT tambahan_harga FROM add_on WHERE id_add_on=%s",
-                       (addon_id,), fetchall=False)
+            # Logika: Kalau lu mau bisa 2x Molto, 
+            # lu tinggal kirim addon_id-nya 2x di list-nya [1, 1, 2]
+            # Nanti sistem bakal insert 2 baris ke detail_addon
+            ao = query("SELECT tambahan_harga FROM add_on WHERE id_add_on=%s", (addon_id,), fetchall=False)
             if ao:
                 execute(
-                    "INSERT INTO detail_addon (id_detail, add_on_id_add_on, harga_saat_itu) VALUES (%s,%s,%s)",
+                    "INSERT INTO detail_addon (id_detail, add_on_id_add_on, harga_saat_itu, jumlah_addon) VALUES (%s,%s,%s, 1)",
                     (did, addon_id, ao["tambahan_harga"])
                 )
 

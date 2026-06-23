@@ -106,7 +106,7 @@
     let allUsers = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const user = await requireAuth(['manager']);
+      const user = await requireAuth(['manager', 'owner']);
       initManagerLayout(user, 'akun-admin');
       await loadUsers();
     });
@@ -131,38 +131,43 @@
           <span style="font-size:48px;">🧑‍💼</span>
           <p style="color:#9CA3AF; margin-top:12px;">Belum ada akun admin</p>
         </div>`;
+        
         return;
       }
 
+      // Di dalam fungsi renderAdmins(list)
       grid.innerHTML = list.map(u => {
-        const nama     = `${u.first_name} ${u.last_name}`.trim();
-        const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-        const isAktif  = !!u.aktif;
-        return `
-          <div class="admin-card" style="border-left: 4px solid ${isAktif?'#15803D':'#D1D5DB'};">
-            <div class="admin-avatar"
-              style="background:${isAktif?'#F0FDF4':'#F3F4F6'}; color:${isAktif?'#15803D':'#9CA3AF'};">
-              ${initials}
-            </div>
-            <div style="flex:1; min-width:0;">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;">
-                <p style="font-size:15px; font-weight:800; color:#111827;">${nama}</p>
-                <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;
-                  background:${isAktif?'#DCFCE7':'#F3F4F6'}; color:${isAktif?'#15803D':'#9CA3AF'};">
-                  ${isAktif ? 'Aktif' : 'Nonaktif'}
-                </span>
+          const nama     = `${u.first_name} ${u.last_name}`.trim();
+          const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+          const isAktif  = !!u.aktif;
+          
+          return `
+            <div class="admin-card" style="border-left: 4px solid ${isAktif?'#15803D':'#D1D5DB'};">
+              <div class="admin-avatar"
+                style="background:${isAktif?'#F0FDF4':'#F3F4F6'}; color:${isAktif?'#15803D':'#9CA3AF'};">
+                ${initials}
               </div>
-              <p style="font-size:12px; color:#6B7280;">✉️ ${u.email}</p>
-              <p style="font-size:11px; color:#9CA3AF; margin-top:2px;">
-                Bergabung: ${u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '-'}
-              </p>
-            </div>
-            <button class="toggle-btn"
-              onclick="toggleAktif(${u.id_user}, ${isAktif})"
-              style="background:${isAktif?'#FEF2F2':'#F0FDF4'}; color:${isAktif?'#DC2626':'#15803D'};">
-              ${isAktif ? '🔴 Nonaktifkan' : '🟢 Aktifkan'}
-            </button>
-          </div>`;
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;">
+                  <p style="font-size:15px; font-weight:800; color:#111827;">${nama}</p>
+                  <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;
+                    background:${isAktif?'#DCFCE7':'#F3F4F6'}; color:${isAktif?'#15803D':'#9CA3AF'};">
+                    ${isAktif ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                <p style="font-size:12px; color:#6B7280;">✉️ ${u.email}</p>
+                
+                <p style="font-size:11px; color:#9CA3AF; margin-top:2px;">
+                  Bergabung: ${u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '-'}
+                </p>
+                
+              </div>
+              <button class="toggle-btn"
+                onclick="toggleAktif(${u.id_user}, ${isAktif})"
+                style="background:${isAktif?'#FEF2F2':'#F0FDF4'}; color:${isAktif?'#DC2626':'#15803D'};">
+                ${isAktif ? '🔴 Nonaktifkan' : '🟢 Aktifkan'}
+              </button>
+            </div>`;
       }).join('');
     }
 

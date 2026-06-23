@@ -5,16 +5,13 @@ import bcrypt
 # Definisikan Blueprint untuk route user
 user_bp = Blueprint("user", __name__)
 
+# Buka user.py, update fungsi get_all jadi kayak gini:
 @user_bp.route("/", methods=["GET"])
 def get_all():
-    """
-    Mengambil semua daftar user beserta nama role mereka.
-    Dipakai oleh halaman manajemen akun admin/kasir oleh Manager.
-    """
     try:
         sql = """
             SELECT u.id_user, u.first_name, u.last_name, u.email, u.aktif,
-                   r.nama_role
+                   r.nama_role, u.created_at
             FROM users u 
             JOIN roles r ON u.roles_id_role = r.id_role
             ORDER BY u.id_user

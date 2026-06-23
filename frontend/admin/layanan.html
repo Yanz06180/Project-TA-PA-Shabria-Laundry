@@ -81,7 +81,6 @@
       <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
         <div class="page-inner">
 
-          <!-- Title + Add -->
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
             <div>
               <h1 style="font-size:22px; font-weight:900; color:#111827;">Manajemen Layanan</h1>
@@ -90,10 +89,8 @@
             <button onclick="openModal()" class="btn btn-primary">＋ Tambah Layanan</button>
           </div>
 
-          <!-- Category filter -->
           <div class="pill-row" id="catFilter" style="margin-bottom:20px;"></div>
 
-          <!-- Grid -->
           <div class="layanan-grid" id="layananGrid">
             <p style="grid-column:1/-1; text-align:center; color:#9CA3AF; padding:40px 0;">Memuat data...</p>
           </div>
@@ -102,7 +99,6 @@
     </div>
   </div>
 
-  <!-- Modal Tambah/Edit Layanan -->
   <div class="modal-overlay" id="modal">
     <div class="modal" style="max-width:520px;">
       <div class="modal-header">
@@ -112,28 +108,24 @@
       <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
         <input type="hidden" id="editId" />
 
-        <!-- Icon picker -->
         <div class="form-group">
           <label class="form-label">Ikon</label>
           <div class="icon-grid" id="iconGrid"></div>
           <input type="hidden" id="fIcon" value="🧺" />
         </div>
 
-        <!-- Nama -->
         <div class="form-group">
           <label class="form-label">Nama Layanan <span style="color:#EF4444;">*</span></label>
           <input class="form-control" id="fNama" placeholder="Contoh: Cuci Komplit - Regular" />
         </div>
 
-        <!-- Kategori -->
         <div class="form-group">
-          <label class="form-label">Kategori <span style="color:#EF4444;">*</span></label>
+          <label class="form-label">Katalog / Jenis <span style="color:#EF4444;">*</span></label>
           <select class="form-control" id="fJenis">
-            <option value="">Pilih kategori...</option>
+            <option value="">Pilih katalog...</option>
           </select>
         </div>
 
-        <!-- Harga + Satuan -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div class="form-group">
             <label class="form-label">Harga (Rp) <span style="color:#EF4444;">*</span></label>
@@ -149,7 +141,6 @@
           </div>
         </div>
 
-        <!-- Estimasi -->
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Estimasi Hari <span style="font-size:11px; color:#9CA3AF;">(0 = tidak ada)</span></label>
           <input class="form-control" id="fEst" type="number" placeholder="3" value="0" />
@@ -162,7 +153,6 @@
     </div>
   </div>
 
-  <!-- Modal Konfirmasi Hapus -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal" style="max-width:360px;">
       <div class="modal-body" style="text-align:center; padding:32px 28px;">
@@ -190,8 +180,6 @@
     let deleteId    = null;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      await requireAuth(['admin']);
-      initAdminLayout(null, 'layanan');
       /* Layout pakai user dari session */
       const u = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
       initAdminLayout(u, 'layanan');
@@ -211,12 +199,12 @@
           api.layanan.jenis(),
         ]);
 
-        /* Populate jenis dropdown */
+        /* Populate jenis dropdown untuk form tambah/edit */
         document.getElementById('fJenis').innerHTML =
-          '<option value="">Pilih kategori...</option>' +
+          '<option value="">Pilih katalog...</option>' +
           jenisAll.map(j => `<option value="${j.id_jenis_barang}">${j.jenis_nama}</option>`).join('');
 
-        /* Category filter pills */
+        /* Category filter pills untuk tab di atas */
         const cats = ['Semua', ...jenisAll.map(j => j.jenis_nama)];
         document.getElementById('catFilter').innerHTML = cats.map(c => `
           <button class="pill ${c===activeKat?'active':''}" onclick="filterKat('${c}',this)">${c}</button>
@@ -324,7 +312,7 @@
       const icon  = document.getElementById('fIcon').value;
 
       if (!nama || !jenis || !harga) {
-        showToast('Nama, kategori, dan harga wajib diisi', 'error'); return;
+        showToast('Nama, katalog, dan harga wajib diisi', 'error'); return;
       }
 
       const btn = document.getElementById('saveBtn');

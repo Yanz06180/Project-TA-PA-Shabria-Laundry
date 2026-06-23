@@ -8,10 +8,9 @@ layanan_bp = Blueprint("layanan", __name__)
 def get_all():
     rows = query(
         """SELECT l.*, j.jenis_nama
-           FROM layanan l
-           JOIN jenis_barang j ON l.id_jenis_barang = j.id_jenis_barang
-           WHERE l.aktif = 1
-           ORDER BY l.id_jenis_barang, l.lay_nama"""
+        FROM layanan l
+        JOIN jenis_barang j ON l.id_jenis_barang = j.id_jenis_barang
+        WHERE l.aktif = 1"""
     )
     return jsonify(rows)
 

@@ -86,9 +86,8 @@
 </head>
 <body>
 <div class="card">
-  <!-- Kiri -->
   <div class="left">
-    <img src="assets/logo.jpg" alt="Logo" onerror="this.style.display='none'"/>
+    <img src="assets/Logo.jpeg" alt="Logo" onerror="this.style.display='none'"/>
     <h1>Shabria Laundry</h1>
     <p>Sistem Manajemen Internal<br>untuk Kasir &amp; Manager</p>
     <div class="rp">
@@ -101,7 +100,6 @@
     </div>
   </div>
 
-  <!-- Kanan -->
   <div class="right">
     <p class="sub">Selamat datang kembali 👋</p>
     <h2>Masuk ke Akun Anda</h2>
@@ -148,7 +146,10 @@ const BASE = 'http://localhost:5000/api';
 (function(){
   try {
     var u = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    if (u && u.role) { go(u.role); }
+    if (u) { 
+      var r = (u.role || u.nama_role || '').toLowerCase();
+      go(r); 
+    }
   } catch(e) {}
 })();
 
@@ -156,7 +157,7 @@ function go(role) {
   var r = (role || '').toLowerCase();
   if (r === 'manager' || r === 'owner') {
     window.location.href = 'manager/dashboard.html';
-  } else {
+  } else if (r === 'admin' || r === 'kasir') {
     window.location.href = 'admin/dashboard.html';
   }
 }
@@ -192,14 +193,24 @@ document.getElementById('loginForm').onsubmit = async function(e) {
 
     if (!res.ok) throw new Error(data.error || 'Login gagal. Periksa email/password.');
 
-    // Normalisasi role ke lowercase
-    data.role = (data.role || '').toLowerCase();
+    // Tangkap nama_role atau role dari backend, ubah ke lowercase
+    var userRole = (data.role || data.nama_role || '').toLowerCase();
+
+    // Simpan ke data agar konsisten saat dibaca file lain
+    data.role = userRole;
+    data.nama_role = userRole;
 
     // Simpan ke sessionStorage — KUNCI agar tidak redirect loop
     sessionStorage.setItem('currentUser', JSON.stringify(data));
-    console.log('Login sukses, role:', data.role);
+    console.log('Login sukses, role:', userRole);
 
-    go(data.role);
+    if (userRole === 'manager' || userRole === 'owner') {
+      window.location.href = 'manager/dashboard.html';
+    } else if (userRole === 'admin' || userRole === 'kasir') {
+      window.location.href = 'admin/dashboard.html';
+    } else {
+      throw new Error('Role tidak dikenali oleh sistem: ' + userRole);
+    }
   } catch(ex) {
     err.textContent   = ex.message;
     err.style.display = 'block';

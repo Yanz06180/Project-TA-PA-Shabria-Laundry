@@ -86,19 +86,15 @@
             <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:14px;">Pilih Layanan</h2>
 
             <!-- Type toggle -->
-            <div style="display:flex; gap:8px; padding:6px; background:#E8F0FE; border-radius:16px; margin-bottom:14px;">
-              <button onclick="switchType('kiloan')" id="btnKiloan"
-                style="flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:800; background:white; color:#1565C0; box-shadow:0 2px 8px rgba(21,101,192,0.15);">
-                ⚖️ Kiloan
-              </button>
-              <button onclick="switchType('satuan')" id="btnSatuan"
-                style="flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:#6B7280;">
-                🧩 Satuan
-              </button>
-            </div>
+            
 
             <!-- Sub-category pills -->
-            <div class="pill-row" id="catPills" style="margin-bottom:16px;"></div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:13px; font-weight:700; color:#374151; display:block; margin-bottom:8px;">Pilih Katalog Layanan:</label>
+              <select id="catDropdown" onchange="setJenis(Number(this.value))" 
+                      style="width:100%; padding:12px 16px; border-radius:12px; border:1.5px solid #BFDBFE; font-size:14px; font-weight:700; color:#1565C0; background:#EFF6FF; outline:none; cursor:pointer;">
+              </select>
+            </div>
 
             <!-- Layanan list -->
             <div id="layananOptions" style="margin-bottom:16px;"></div>
@@ -186,20 +182,12 @@
     let selectedTambahan  = new Set();
     let selectedAntar     = new Set();
     let metodePembayaran  = null;
-    let tipeLayanan       = 'kiloan';
-    let subKategori       = 'Cuci Komplit';
     let pendingLayanan    = null;        // layanan yg sedang dikonfigurasi
     let pendingQty        = 1;
+    let jenisBarangAll = [];
+    let activeJenisId  = null; // Menyimpan ID katalog yang lagi dipilih
 
-    const KILOAN_SUB = ['Cuci Komplit','Cuci Lipat','Setrika Saja','Cuci Kering'];
-    const SATUAN_SUB = ['Pakaian','Bedding/Selimut','Sepatu & Tas','Boneka'];
-
-    const SATUAN_FILTER = {
-      'Pakaian':        l => l.jenis_nama === 'Pakaian Satuan',
-      'Bedding/Selimut':l => l.lay_nama.toLowerCase().includes('bedcover') || l.lay_nama.toLowerCase().includes('selimut'),
-      'Sepatu & Tas':   l => l.lay_nama.toLowerCase().includes('sepatu'),
-      'Boneka':         l => l.lay_nama.toLowerCase().includes('boneka'),
-    };
+    
 
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', async () => {
@@ -207,11 +195,18 @@
       initAdminLayout(currentUser, 'transaksi');
       updateStepUI();
 
+      // Fetch semua data dari API lu
+      const resJenis = await fetch('http://127.0.0.1:5000/api/layanan/jenis');
+      jenisBarangAll = await resJenis.json();
+
       [customers, layananAll, addons] = await Promise.all([
         api.pelanggan.all(),
         api.layanan.all(),
         api.addon.all(),
       ]);
+
+      // Set katalog pertama sebagai yang aktif secara default
+      if (jenisBarangAll.length > 0) activeJenisId = jenisBarangAll[0].id_jenis_barang;
 
       renderCustomerOptions(customers);
       renderAddons();
@@ -280,21 +275,29 @@
 
     /* ── Step 0: Customer ── */
     function renderCustomerOptions(list) {
-      document.getElementById('customerOptions').innerHTML = list.map(c => {
-        const nama = `${c.pel_first_name} ${c.pel_last_name}`.trim();
-        const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-        const isSel = selectedCustomer?.id_pelanggan === c.id_pelanggan;
-        return `
-          <button class="customer-option ${isSel?'selected':''}" onclick="selectCustomer(${c.id_pelanggan})">
-            <div style="width:46px; height:46px; border-radius:14px; background:${isSel?'#1565C0':'#F3F4F6'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:${isSel?'white':'#6B7280'}; flex-shrink:0;">${initials}</div>
-            <div style="flex:1; text-align:left;">
-              <p style="font-size:14px; font-weight:700; color:#111827;">${nama}</p>
-              <p style="font-size:12px; color:#9CA3AF;">${c.pel_no_telepon}</p>
-            </div>
-            <div class="check-circle ${isSel?'checked':''}">${isSel?'✓':''}</div>
-          </button>`;
-      }).join('');
-    }
+  const container = document.getElementById('customerOptions');
+  
+  // Kasih validasi kalau datanya kosong
+  if (!list || list.length === 0) {
+    container.innerHTML = `<p style="text-align:center; color:#EF4444; padding:30px 0; font-weight:700;">🤷‍♂️ Customer tidak ditemukan.</p>`;
+    return;
+  }
+
+  container.innerHTML = list.map(c => {
+    const nama = `${c.pel_first_name} ${c.pel_last_name}`.trim();
+    const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const isSel = selectedCustomer?.id_pelanggan === c.id_pelanggan;
+    return `
+      <button class="customer-option ${isSel?'selected':''}" onclick="selectCustomer(${c.id_pelanggan})">
+        <div style="width:46px; height:46px; border-radius:14px; background:${isSel?'#1565C0':'#F3F4F6'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:${isSel?'white':'#6B7280'}; flex-shrink:0;">${initials}</div>
+        <div style="flex:1; text-align:left;">
+          <p style="font-size:14px; font-weight:700; color:#111827;">${nama}</p>
+          <p style="font-size:12px; color:#9CA3AF;">${c.pel_no_telepon}</p>
+        </div>
+        <div class="check-circle ${isSel?'checked':''}">${isSel?'✓':''}</div>
+      </button>`;
+  }).join('');
+}
 
     function filterCustomerOptions() {
       const q = document.getElementById('customerSearch').value.toLowerCase();
@@ -311,33 +314,28 @@
     }
 
     /* ── Step 1: Layanan ── */
-    function switchType(type) {
-      tipeLayanan = type;
-      subKategori = type === 'kiloan' ? 'Cuci Komplit' : 'Pakaian';
+    function setJenis(id) {
+      activeJenisId = id;
       pendingLayanan = null;
-      document.getElementById('btnKiloan').style.cssText = type==='kiloan'
-        ? 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:800; background:white; color:#1565C0; box-shadow:0 2px 8px rgba(21,101,192,0.15);'
-        : 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:#6B7280;';
-      document.getElementById('btnSatuan').style.cssText = type==='satuan'
-        ? 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:800; background:white; color:#1565C0; box-shadow:0 2px 8px rgba(21,101,192,0.15);'
-        : 'flex:1; padding:10px; border-radius:12px; border:none; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:#6B7280;';
       renderLayananOptions();
     }
 
     function renderLayananOptions() {
-      const subs = tipeLayanan === 'kiloan' ? KILOAN_SUB : SATUAN_SUB;
-      document.getElementById('catPills').innerHTML = subs.map(s => `
-        <button class="cat-pill ${subKategori===s?'active':''}" onclick="setSubKat('${s}')">${s}</button>
-      `).join('');
-
-      let visible = [];
-      if (tipeLayanan === 'kiloan') {
-        visible = layananAll.filter(l => l.jenis_nama === subKategori);
-      } else {
-        const fn = SATUAN_FILTER[subKategori];
-        visible = fn ? layananAll.filter(fn) : [];
+      // 1. Render tombol katalog (dinamis dari tabel jenis_barang)
+      // 1. Render isi dropdown katalog (kalau masih kosong)
+      const catDropdown = document.getElementById('catDropdown');
+      if (catDropdown.innerHTML.trim() === '') {
+        catDropdown.innerHTML = jenisBarangAll.map(j => `
+          <option value="${j.id_jenis_barang}">${j.jenis_nama}</option>
+        `).join('');
       }
+      // Set dropdown sesuai katalog yang lagi aktif
+      catDropdown.value = activeJenisId;
 
+      // 2. Filter layanan yang id_jenis_barang-nya cocok sama katalog yang dipilih
+      const visible = layananAll.filter(l => l.id_jenis_barang === activeJenisId);
+
+      // 3. Render kartu layanannya
       document.getElementById('layananOptions').innerHTML = visible.map(l => {
         const isSel = pendingLayanan?.id_layanan === l.id_layanan;
         return `
