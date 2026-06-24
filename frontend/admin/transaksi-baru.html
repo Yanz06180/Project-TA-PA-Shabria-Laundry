@@ -179,7 +179,7 @@
 
     let selectedCustomer  = null;
     let cart              = [];          // [{layananId, nama, harga, qty, isKiloan, catatan}]
-    let selectedTambahan  = new Set();
+    let selectedTambahan  = {};
     let selectedAntar     = new Set();
     let metodePembayaran  = null;
     let pendingLayanan    = null;        // layanan yg sedang dikonfigurasi
@@ -447,30 +447,61 @@
 
     /* ── Step 2: Tambahan ── */
     function renderAddons() {
-      const tambahan   = addons.filter(a => !a.add_nama.toLowerCase().includes('pick up') && !a.add_nama.toLowerCase().includes('delivery'));
-      const antarJemput = addons.filter(a => a.add_nama.toLowerCase().includes('pick up') || a.add_nama.toLowerCase().includes('delivery'));
+      // Filter udah gw perbaiki biar nangkep bahasa Indo ("antar", "jemput")
+      const tambahan = addons.filter(a => !a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
+      const antarJemput = addons.filter(a => a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
 
-      document.getElementById('tambahanOptions').innerHTML = tambahan.map(a => `
-        <button onclick="toggleAddon('tambahan', ${a.id_add_on})" id="addon_t_${a.id_add_on}"
-          style="display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; border-radius:14px; border:1.5px solid #F3F4F6; background:white; cursor:pointer; margin-bottom:10px; text-align:left; transition:all 0.15s;">
-          <div style="width:48px; height:48px; border-radius:14px; background:#F9FAFB; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${a.icon || '✨'}</div>
-          <div style="flex:1;">
-            <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
-            <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:2px;">${formatRupiah(a.tambahan_harga)}/kg</p>
-          </div>
-          <div id="addonCheck_t_${a.id_add_on}" style="width:22px; height:22px; border-radius:6px; border:2px solid #D1D5DB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"></div>
-        </button>`).join('');
+      // UI Tambahan (Sekarang pakai tombol - dan +)
+      document.getElementById('tambahanOptions').innerHTML = tambahan.map(a => {
+        const qty = selectedTambahan[a.id_add_on] || 0;
+        const isSel = qty > 0;
+        return `
+          <div style="display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; border-radius:14px; border:${isSel ? '2px solid #1565C0' : '1.5px solid #F3F4F6'}; background:${isSel ? '#EFF6FF' : 'white'}; margin-bottom:10px; transition:all 0.15s;">
+            <div style="width:48px; height:48px; border-radius:14px; background:#F9FAFB; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${a.icon || '✨'}</div>
+            <div style="flex:1;">
+              <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
+              <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:2px;">${formatRupiah(a.tambahan_harga)}/kg</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; background:white; padding:4px; border-radius:10px; border:1px solid #BFDBFE;">
+              <button onclick="changeTambahanQty(${a.id_add_on}, -1)" style="width:28px; height:28px; border-radius:8px; background:#EFF6FF; border:none; color:#1565C0; font-weight:bold; cursor:pointer;">−</button>
+              <span style="font-size:14px; font-weight:800; color:#111827; width:20px; text-align:center;">${qty}</span>
+              <button onclick="changeTambahanQty(${a.id_add_on}, 1)" style="width:28px; height:28px; border-radius:8px; background:#1565C0; border:none; color:white; font-weight:bold; cursor:pointer;">＋</button>
+            </div>
+          </div>`;
+      }).join('');
 
-      document.getElementById('antarJemputOptions').innerHTML = antarJemput.map(a => `
-        <button onclick="toggleAddon('antar', ${a.id_add_on})" id="addon_a_${a.id_add_on}"
-          style="display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; border-radius:14px; border:1.5px solid #F3F4F6; background:white; cursor:pointer; margin-bottom:10px; text-align:left; transition:all 0.15s;">
-          <div style="width:48px; height:48px; border-radius:14px; background:#F9FAFB; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${a.icon || '🚗'}</div>
-          <div style="flex:1;">
-            <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
-            <p style="font-size:12px; color:#7C3AED; font-weight:600; margin-top:2px;">${formatRupiah(a.tambahan_harga)} / sekali</p>
-          </div>
-          <div id="addonCheck_a_${a.id_add_on}" style="width:22px; height:22px; border-radius:6px; border:2px solid #D1D5DB; display:flex; align-items:center; justify-content:center; flex-shrink:0;"></div>
-        </button>`).join('');
+      // UI Antar Jemput (Tetap dicentang karena 1x jalan)
+      document.getElementById('antarJemputOptions').innerHTML = antarJemput.map(a => {
+        const isSel = selectedAntar.has(a.id_add_on);
+        return `
+          <button onclick="toggleAntar(${a.id_add_on})"
+            style="display:flex; align-items:center; gap:14px; width:100%; padding:14px 16px; border-radius:14px; border:${isSel ? '2px solid #7C3AED' : '1.5px solid #F3F4F6'}; background:${isSel ? '#F5F3FF' : 'white'}; cursor:pointer; margin-bottom:10px; text-align:left; transition:all 0.15s;">
+            <div style="width:48px; height:48px; border-radius:14px; background:#F9FAFB; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${a.icon || '🚗'}</div>
+            <div style="flex:1;">
+              <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
+              <p style="font-size:12px; color:#7C3AED; font-weight:600; margin-top:2px;">${formatRupiah(a.tambahan_harga)} / sekali</p>
+            </div>
+            <div style="width:22px; height:22px; border-radius:6px; border:${isSel ? 'none' : '2px solid #D1D5DB'}; background:${isSel ? '#7C3AED' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:white; font-size:13px;">${isSel ? '✓' : ''}</div>
+          </button>`;
+      }).join('');
+    }
+
+    function changeTambahanQty(id, delta) {
+      let current = selectedTambahan[id] || 0;
+      let next = current + delta;
+      if (next < 0) next = 0;
+      if (next === 0) delete selectedTambahan[id];
+      else selectedTambahan[id] = next;
+      
+      renderAddons();
+      updateExtraSummary();
+    }
+
+    function toggleAntar(id) {
+      if (selectedAntar.has(id)) selectedAntar.delete(id);
+      else selectedAntar.add(id);
+      renderAddons();
+      updateExtraSummary();
     }
 
     function toggleAddon(type, id) {
@@ -498,17 +529,25 @@
 
     function updateExtraSummary() {
       const sec = document.getElementById('extraSummary');
-      const selT = [...selectedTambahan].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
-      const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
       const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
+      
+      const selT = Object.keys(selectedTambahan).map(id => {
+        const a = addons.find(x => x.id_add_on == id);
+        return { ...a, qty: selectedTambahan[id] };
+      }).filter(x => x.id_add_on);
+      const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      
       if (!selT.length && !selA.length) { sec.style.display = 'none'; return; }
       sec.style.display = 'block';
+      
       const rows = [
-        ...selT.map(a => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#6B7280; margin-bottom:4px;"><span>${a.icon||'✨'} ${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga * Math.max(1, totalKgKiloan))}</span></div>`),
+        ...selT.map(a => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#6B7280; margin-bottom:4px;"><span>${a.icon||'✨'} ${a.qty}x ${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan))}</span></div>`),
         ...selA.map(a => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#6B7280; margin-bottom:4px;"><span>${a.icon||'🚗'} ${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga)}</span></div>`),
       ].join('');
-      const totalExtra = selT.reduce((s,a) => s + a.tambahan_harga * Math.max(1, totalKgKiloan), 0)
+      
+      const totalExtra = selT.reduce((s,a) => s + (a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan)), 0)
                        + selA.reduce((s,a) => s + a.tambahan_harga, 0);
+                       
       sec.innerHTML = `<p style="font-size:12px; font-weight:700; color:#374151; margin-bottom:8px;">Ringkasan Biaya Tambahan</p>
         ${rows}
         <hr style="border:none; border-top:1px solid #BFDBFE; margin:8px 0;"/>
@@ -555,10 +594,11 @@
 
     function renderOrderSummary() {
       const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
-      const selT = [...selectedTambahan].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      const selT = Object.keys(selectedTambahan).map(id => ({ ...addons.find(a => a.id_add_on == id), qty: selectedTambahan[id] })).filter(x => x.id_add_on);
       const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      
       const cartTotal  = cart.reduce((s,i) => s + i.subTotal, 0);
-      const extraTotal = selT.reduce((s,a) => s + a.tambahan_harga * Math.max(1, totalKgKiloan), 0)
+      const extraTotal = selT.reduce((s,a) => s + (a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan)), 0)
                        + selA.reduce((s,a) => s + a.tambahan_harga, 0);
       const grandTotal = cartTotal + extraTotal;
 
@@ -568,7 +608,7 @@
             <span style="color:#6B7280;">${i.nama} (${i.qty}${i.isKiloan?' kg':' pcs'})</span>
             <strong>${formatRupiah(i.subTotal)}</strong>
           </div>`).join('')}
-        ${selT.map(a => `<div class="summary-row"><span style="color:#6B7280;">${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga * Math.max(1,totalKgKiloan))}</span></div>`).join('')}
+        ${selT.map(a => `<div class="summary-row"><span style="color:#6B7280;">${a.qty}x ${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga * a.qty * Math.max(1,totalKgKiloan))}</span></div>`).join('')}
         ${selA.map(a => `<div class="summary-row"><span style="color:#6B7280;">${a.add_nama}</span><span>+${formatRupiah(a.tambahan_harga)}</span></div>`).join('')}
         <div class="summary-row" style="font-size:16px; font-weight:900; color:#111827; border-bottom:none; padding-top:14px;">
           <span>Total Bayar</span>
@@ -600,7 +640,10 @@
             jumlah_barang: i.isKiloan ? 1 : i.qty,
             berat_barang:  i.isKiloan ? i.qty : 0,
             catatan:       i.catatan || '',
-            addons: [...selectedTambahan, ...selectedAntar],
+            addons: [
+              ...Object.keys(selectedTambahan).map(id => ({ id: Number(id), qty: selectedTambahan[id] })),
+              ...[...selectedAntar].map(id => ({ id: Number(id), qty: 1 }))
+            ],
           })),
         });
 
