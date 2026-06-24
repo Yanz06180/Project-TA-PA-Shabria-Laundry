@@ -81,12 +81,26 @@
       <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
         <div class="page-inner">
 
+          <!-- Bagian Title & Tombol -->
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
             <div>
               <h1 style="font-size:22px; font-weight:900; color:#111827;">Manajemen Layanan</h1>
               <p id="totalLabel" style="font-size:13px; color:#9CA3AF; margin-top:4px;">Memuat...</p>
             </div>
-            <button onclick="openModal()" class="btn btn-primary">＋ Tambah Layanan</button>
+            <button onclick="openDynamicModal()" class="btn btn-primary" id="btnTambahUtama">＋ Tambah Layanan</button>
+          </div>
+
+          <!-- Bagian Dropdown Filter & Tab Menu -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
+              <select id="katalogFilter" onchange="filterKat(this.value)" style="padding:10px 16px; border-radius:12px; border:1.5px solid #BFDBFE; font-size:14px; font-weight:600; color:#1565C0; background:#EFF6FF; outline:none; cursor:pointer; min-width:220px;">
+                  <option value="Semua">Tampilkan Semua Katalog</option>
+                  <!-- Diisi otomatis sama JS -->
+              </select>
+              
+              <div style="display:flex; background:#F3F4F6; border-radius:12px; padding:4px; gap:4px;">
+                  <button id="btnTabLayanan" onclick="switchTab('layanan')" style="padding:8px 16px; border-radius:8px; border:none; background:white; font-weight:700; color:#1565C0; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer; transition:0.2s;">🧺 Layanan Utama</button>
+                  <button id="btnTabAddon" onclick="switchTab('addon')" style="padding:8px 16px; border-radius:8px; border:none; background:transparent; font-weight:600; color:#6B7280; cursor:pointer; transition:0.2s;">✨ Add-on & Antar Jemput</button>
+              </div>
           </div>
 
           <div class="pill-row" id="catFilter" style="margin-bottom:20px;"></div>
@@ -174,89 +188,156 @@
   <script>
     const ICONS = ['👔','👕','🧺','🫧','🔥','⚡','🚀','🧹','👟','👞','🛏️','🧸','🌸','🌺','🌼','🏍️','✨','💧','🌀','🎽','🤵','👗','🧥','👖','👘'];
 
-    let allLayanan  = [];
-    let jenisAll    = [];
-    let activeKat   = 'Semua';
-    let deleteId    = null;
+    let allLayanan = [], jenisAll = [], allAddons = [];
+    let activeKat = 'Semua';
+    let activeTab = 'layanan'; // Bisa 'layanan' atau 'addon'
+    let deleteId = null;
+    let deleteMode = ''; // 'layanan' atau 'addon'
 
     document.addEventListener('DOMContentLoaded', async () => {
-      /* Layout pakai user dari session */
       const u = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
       initAdminLayout(u, 'layanan');
 
-      /* Build icon picker */
       document.getElementById('iconGrid').innerHTML = ICONS.map(ic => `
-        <button type="button" class="icon-opt ${ic==='🧺'?'selected':''}"
-          onclick="selectIcon('${ic}', this)">${ic}</button>`).join('');
+        <button type="button" class="icon-opt ${ic==='🧺'?'selected':''}" onclick="selectIcon('${ic}', this)">${ic}</button>`).join('');
 
       await loadData();
     });
 
     async function loadData() {
       try {
-        [allLayanan, jenisAll] = await Promise.all([
-          api.layanan.all(),
-          api.layanan.jenis(),
+        [allLayanan, jenisAll, allAddons] = await Promise.all([
+          api.layanan.all(), api.layanan.jenis(), api.addon.all()
         ]);
 
-        /* Populate jenis dropdown untuk form tambah/edit */
-        document.getElementById('fJenis').innerHTML =
-          '<option value="">Pilih katalog...</option>' +
+        // Isi form katalog
+        document.getElementById('fJenis').innerHTML = '<option value="">Pilih katalog...</option>' + 
           jenisAll.map(j => `<option value="${j.id_jenis_barang}">${j.jenis_nama}</option>`).join('');
 
-        /* Category filter pills untuk tab di atas */
-        const cats = ['Semua', ...jenisAll.map(j => j.jenis_nama)];
-        document.getElementById('catFilter').innerHTML = cats.map(c => `
-          <button class="pill ${c===activeKat?'active':''}" onclick="filterKat('${c}',this)">${c}</button>
-        `).join('');
+        // Isi dropdown filter
+        document.getElementById('katalogFilter').innerHTML = '<option value="Semua">Tampilkan Semua Katalog</option>' + 
+          jenisAll.map(j => `<option value="${j.jenis_nama}">${j.jenis_nama}</option>`).join('');
 
-        document.getElementById('totalLabel').textContent =
-          `${allLayanan.length} layanan terdaftar`;
-
-        renderLayanan();
-      } catch (err) {
-        showToast('Gagal memuat data: ' + err.message, 'error');
-      }
+        renderGrid();
+      } catch (err) { showToast('Gagal memuat data', 'error'); }
     }
 
-    function filterKat(kat, el) {
+    function switchTab(tab) {
+      activeTab = tab;
+      const btnLayanan = document.getElementById('btnTabLayanan');
+      const btnAddon = document.getElementById('btnTabAddon');
+      const filter = document.getElementById('katalogFilter');
+      const btnTambah = document.getElementById('btnTambahUtama');
+
+      if (tab === 'layanan') {
+        btnLayanan.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:white; font-weight:700; color:#1565C0; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer;';
+        btnAddon.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:transparent; font-weight:600; color:#6B7280; cursor:pointer;';
+        filter.style.display = 'block';
+        btnTambah.innerHTML = '＋ Tambah Layanan';
+      } else {
+        btnAddon.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:white; font-weight:700; color:#1565C0; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer;';
+        btnLayanan.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:transparent; font-weight:600; color:#6B7280; cursor:pointer;';
+        filter.style.display = 'none'; // Sembunyikan filter katalog kalau lagi buka add-on
+        btnTambah.innerHTML = '＋ Tambah Add-on';
+      }
+      renderGrid();
+    }
+
+    function filterKat(kat) {
       activeKat = kat;
-      document.querySelectorAll('#catFilter .pill').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      renderLayanan();
+      renderGrid();
     }
 
-    function renderLayanan() {
-      const list = activeKat === 'Semua'
-        ? allLayanan
-        : allLayanan.filter(l => l.jenis_nama === activeKat);
-
+    function renderGrid() {
       const grid = document.getElementById('layananGrid');
-      if (!list.length) {
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0;">
-          <span style="font-size:48px;">📋</span>
-          <p style="color:#9CA3AF; margin-top:12px;">Belum ada layanan di kategori ini</p>
-        </div>`;
-        return;
+      
+      if (activeTab === 'layanan') {
+        const list = activeKat === 'Semua' ? allLayanan : allLayanan.filter(l => l.jenis_nama === activeKat);
+        document.getElementById('totalLabel').textContent = `${list.length} layanan terdaftar`;
+        
+        if (!list.length) {
+          grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0;"><span style="font-size:48px;">📋</span><p style="color:#9CA3AF; margin-top:12px;">Kosong bro</p></div>`;
+          return;
+        }
+        grid.innerHTML = list.map(l => `
+          <div class="layanan-card">
+            <div class="layanan-icon">${l.icon || '🧺'}</div>
+            <div style="flex:1; min-width:0;">
+              <p style="font-size:13px; font-weight:700; color:#111827;">${l.lay_nama}</p>
+              <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:3px;">${formatRupiah(l.lay_harga)}/${l.satuan}</p>
+              <span class="cat-chip">${l.jenis_nama}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button onclick="openEditLayanan(${l.id_layanan})" style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer;">✏️</button>
+              <button onclick="openDelete(${l.id_layanan}, '${l.lay_nama}', 'layanan')" style="width:34px; height:34px; border-radius:10px; background:#FEF2F2; border:none; cursor:pointer;">🗑️</button>
+            </div>
+          </div>`).join('');
+      } else {
+        document.getElementById('totalLabel').textContent = `${allAddons.length} Add-on terdaftar`;
+        if (!allAddons.length) {
+          grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0;"><span style="font-size:48px;">✨</span><p style="color:#9CA3AF; margin-top:12px;">Belum ada Add-on</p></div>`;
+          return;
+        }
+        grid.innerHTML = allAddons.map(a => `
+          <div class="layanan-card">
+            <div class="layanan-icon">✨</div>
+            <div style="flex:1; min-width:0;">
+              <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
+              <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:3px;">+ ${formatRupiah(a.tambahan_harga)}</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button onclick="openEditAddon(${a.id_add_on})" style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer;">✏️</button>
+              <button onclick="openDelete(${a.id_add_on}, '${a.add_nama}', 'addon')" style="width:34px; height:34px; border-radius:10px; background:#FEF2F2; border:none; cursor:pointer;">🗑️</button>
+            </div>
+          </div>`).join('');
       }
-      grid.innerHTML = list.map(l => `
-        <div class="layanan-card">
-          <div class="layanan-icon">${l.icon || '🧺'}</div>
-          <div style="flex:1; min-width:0;">
-            <p style="font-size:13px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${l.lay_nama}</p>
-            <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:3px;">
-              ${formatRupiah(l.lay_harga)}/${l.satuan}
-              ${l.estimasi_hari > 0 ? ' · ~' + l.estimasi_hari + ' hari' : ''}
-            </p>
-            <span class="cat-chip">${l.jenis_nama}</span>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-            <button onclick="openEdit(${l.id_layanan})"
-              style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer; font-size:15px;">✏️</button>
-            <button onclick="openDelete(${l.id_layanan},'${l.lay_nama.replace(/'/g,"\\\'")}')"
-              style="width:34px; height:34px; border-radius:10px; background:#FEF2F2; border:none; cursor:pointer; font-size:15px;">🗑️</button>
-          </div>
-        </div>`).join('');
+    }
+
+    // --- LOGIKA LAYANAN UTAMA ---
+    function openDynamicModal() {
+      if(activeTab === 'layanan') {
+        document.getElementById('modalTitle').textContent = 'Tambah Layanan';
+        document.getElementById('editId').value = '';
+        document.getElementById('fNama').value = '';
+        document.getElementById('fHarga').value = '';
+        document.getElementById('modal').classList.add('show');
+      } else {
+        document.getElementById('modalTitleAddon').textContent = 'Tambah Add-on';
+        document.getElementById('editIdAddon').value = '';
+        document.getElementById('fNamaAddon').value = '';
+        document.getElementById('fHargaAddon').value = '';
+        document.getElementById('modalAddon').classList.add('show');
+      }
+    }
+
+    function openEditLayanan(id) {
+      const l = allLayanan.find(x => x.id_layanan === id);
+      document.getElementById('modalTitle').textContent = 'Edit Layanan';
+      document.getElementById('editId').value = id;
+      document.getElementById('fNama').value = l.lay_nama;
+      document.getElementById('fJenis').value = l.id_jenis_barang;
+      document.getElementById('fHarga').value = l.lay_harga;
+      document.getElementById('fSatuan').value = l.satuan;
+      document.getElementById('fEst').value = l.estimasi_hari;
+      selectIconByValue(l.icon || '🧺');
+      document.getElementById('modal').classList.add('show');
+    }
+
+    async function saveLayanan() {
+      const id = document.getElementById('editId').value;
+      const data = {
+        lay_nama: document.getElementById('fNama').value,
+        lay_harga: Number(document.getElementById('fHarga').value),
+        satuan: document.getElementById('fSatuan').value,
+        estimasi_hari: Number(document.getElementById('fEst').value) || 0,
+        icon: document.getElementById('fIcon').value,
+        id_jenis_barang: Number(document.getElementById('fJenis').value)
+      };
+      try {
+        if(id) await api.layanan.update(Number(id), data);
+        else await api.layanan.create(data);
+        closeModal(); loadData();
+      } catch(err) { showToast(err.message, 'error'); }
     }
 
     function selectIcon(ic, el) {
@@ -264,103 +345,50 @@
       document.querySelectorAll('.icon-opt').forEach(b => b.classList.remove('selected'));
       el.classList.add('selected');
     }
-
-    function openModal() {
-      document.getElementById('modalTitle').textContent  = 'Tambah Layanan';
-      document.getElementById('saveBtn').textContent     = 'Tambah Layanan';
-      document.getElementById('editId').value    = '';
-      document.getElementById('fNama').value     = '';
-      document.getElementById('fJenis').value    = '';
-      document.getElementById('fHarga').value    = '';
-      document.getElementById('fSatuan').value   = 'kg';
-      document.getElementById('fEst').value      = '0';
-      selectIconByValue('🧺');
-      document.getElementById('modal').classList.add('show');
-    }
-
-    function openEdit(id) {
-      const l = allLayanan.find(x => x.id_layanan === id);
-      if (!l) return;
-      document.getElementById('modalTitle').textContent = 'Edit Layanan';
-      document.getElementById('saveBtn').textContent    = 'Simpan Perubahan';
-      document.getElementById('editId').value   = id;
-      document.getElementById('fNama').value    = l.lay_nama;
-      document.getElementById('fJenis').value   = l.id_jenis_barang;
-      document.getElementById('fHarga').value   = l.lay_harga;
-      document.getElementById('fSatuan').value  = l.satuan;
-      document.getElementById('fEst').value     = l.estimasi_hari;
-      selectIconByValue(l.icon || '🧺');
-      document.getElementById('modal').classList.add('show');
-    }
-
     function selectIconByValue(ic) {
       document.getElementById('fIcon').value = ic;
-      document.querySelectorAll('.icon-opt').forEach(b => {
-        b.classList.toggle('selected', b.textContent.trim() === ic);
-      });
+      document.querySelectorAll('.icon-opt').forEach(b => b.classList.toggle('selected', b.textContent.trim() === ic));
     }
-
     function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
-    async function saveLayanan() {
-      const id    = document.getElementById('editId').value;
-      const nama  = document.getElementById('fNama').value.trim();
-      const jenis = document.getElementById('fJenis').value;
-      const harga = Number(document.getElementById('fHarga').value);
-      const sat   = document.getElementById('fSatuan').value;
-      const est   = Number(document.getElementById('fEst').value) || 0;
-      const icon  = document.getElementById('fIcon').value;
-
-      if (!nama || !jenis || !harga) {
-        showToast('Nama, katalog, dan harga wajib diisi', 'error'); return;
-      }
-
-      const btn = document.getElementById('saveBtn');
-      btn.disabled = true; btn.textContent = 'Menyimpan...';
-
-      const data = {
-        lay_nama:        nama,
-        lay_harga:       harga,
-        satuan:          sat,
-        estimasi_hari:   est,
-        icon:            icon,
-        id_jenis_barang: Number(jenis),
-      };
-
-      try {
-        if (id) {
-          await api.layanan.update(Number(id), data);
-          showToast('Layanan berhasil diupdate', 'success');
-        } else {
-          await api.layanan.create(data);
-          showToast('Layanan berhasil ditambahkan', 'success');
-        }
-        closeModal();
-        await loadData();
-      } catch (err) {
-        showToast('Gagal: ' + err.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = id ? 'Simpan Perubahan' : 'Tambah Layanan';
-      }
+    // --- LOGIKA ADD-ON ---
+    function openEditAddon(id) {
+      const a = allAddons.find(x => x.id_add_on === id);
+      document.getElementById('modalTitleAddon').textContent = 'Edit Add-on';
+      document.getElementById('editIdAddon').value = id;
+      document.getElementById('fNamaAddon').value = a.add_nama;
+      document.getElementById('fHargaAddon').value = a.tambahan_harga;
+      document.getElementById('modalAddon').classList.add('show');
     }
 
-    function openDelete(id, nama) {
-      deleteId = id;
-      document.getElementById('deleteLabel').textContent = `Yakin hapus layanan "${nama}"?`;
+    async function saveAddon() {
+      const id = document.getElementById('editIdAddon').value;
+      const data = {
+        add_nama: document.getElementById('fNamaAddon').value,
+        tambahan_harga: Number(document.getElementById('fHargaAddon').value)
+      };
+      try {
+        if(id) await api.addon.update(Number(id), data);
+        else await api.addon.create(data);
+        closeModalAddon(); loadData();
+      } catch(err) { showToast(err.message, 'error'); }
+    }
+    function closeModalAddon() { document.getElementById('modalAddon').classList.remove('show'); }
+
+    // --- LOGIKA HAPUS (GLOBAL) ---
+    function openDelete(id, nama, mode) {
+      deleteId = id; deleteMode = mode;
+      document.getElementById('deleteLabel').textContent = `Yakin hapus ${mode} "${nama}"?`;
       document.getElementById('deleteModal').classList.add('show');
     }
 
     async function confirmDelete() {
-      if (!deleteId) return;
       try {
-        await api.layanan.delete(deleteId);
-        showToast('Layanan berhasil dihapus', 'success');
+        if (deleteMode === 'layanan') await api.layanan.delete(deleteId);
+        else await api.addon.delete(deleteId);
         document.getElementById('deleteModal').classList.remove('show');
-        await loadData();
-      } catch (err) {
-        showToast('Gagal: ' + err.message, 'error');
-      }
+        loadData();
+      } catch(err) { showToast(err.message, 'error'); }
     }
   </script>
 </body>
