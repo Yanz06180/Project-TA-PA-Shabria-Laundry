@@ -37,7 +37,7 @@ function _sidebarHTML(navItems, user, accent, accentLight, roleLabel) {
   // Logo
   html += '<div style="display:flex;align-items:center;gap:10px;padding:18px 14px 14px;'
     + 'border-bottom:1px solid #F3F4F6;">'
-    + '<img src="../assets/logo.jpg" style="width:38px;height:38px;border-radius:9px;'
+    + '<img src="../assets/Logo.jpeg" style="width:38px;height:38px;border-radius:9px;'
     + 'border:1px solid #E5E7EB;padding:4px;object-fit:contain;" onerror="this.style.display=\'none\'">'
     + '<div style="flex:1;">'
     + '<p style="font-size:13px;font-weight:800;color:#111827;margin:0;">Shabria Laundry</p>'
@@ -93,7 +93,7 @@ function _headerHTML(user, pageLabel, accent, accentLight, roleLabel) {
     + 'cursor:pointer;font-size:20px;display:none;">☰</button>'
     // Logo mobile
     + '<div class="logo-mobile" style="display:none;align-items:center;gap:8px;">'
-    + '<img src="../assets/logo.jpg" style="width:28px;height:28px;border-radius:7px;'
+    + '<img src="../assets/Logo.jpeg" style="width:28px;height:28px;border-radius:7px;'
     + 'border:1px solid #E5E7EB;padding:3px;object-fit:contain;" onerror="this.style.display=\'none\'">'
     + '<span style="font-size:13px;font-weight:800;color:#111827;">Shabria Laundry</span>'
     + '</div>'

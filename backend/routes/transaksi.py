@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from db import query, execute
-import random, string
 import requests # <-- INI TAMBAHAN BUAT NGE-HIT API FONNTE
 
 transaksi_bp = Blueprint("transaksi", __name__)
