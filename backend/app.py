@@ -9,6 +9,7 @@ from routes.transaksi import transaksi_bp
 from routes.laporan   import laporan_bp
 from routes.addon     import addon_bp
 from routes.user      import user_bp
+from routes.report    import report_bp
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -33,6 +34,7 @@ app.register_blueprint(transaksi_bp, url_prefix="/api/transaksi")
 app.register_blueprint(laporan_bp,   url_prefix="/api/laporan")
 app.register_blueprint(addon_bp,     url_prefix="/api/addon")
 app.register_blueprint(user_bp,      url_prefix="/api/user")
+app.register_blueprint(report_bp,    url_prefix="/api/report")
 
 @app.route("/api/health")
 def health():

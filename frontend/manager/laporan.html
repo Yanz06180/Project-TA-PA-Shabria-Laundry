@@ -9,6 +9,23 @@
   <style>
     .page-inner  { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
     .filter-row  { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+    
+    /* 🛠️ TAMBAHKAN KODE INI DI BAWAH .filter-row KAMPUS */
+    .filter-row .btn, 
+    .filter-row .form-control {
+      height: 38px !important;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .filter-row .form-control {
+      padding: 0 12px; /* merapikan padding dalam input date */
+    }
+    .filter-row .btn.btn-sm {
+      font-size: 13px;
+      padding: 0 16px;
+    }
     .net-banner  {
       border-radius: 22px;
       padding: 24px 28px;
@@ -53,11 +70,16 @@
             <button class="btn btn-ghost" id="btnBulanLalu" onclick="setFilter('bulan-lalu')">Bulan Lalu</button>
             <button class="btn btn-ghost" id="btnSemua"     onclick="setFilter('semua')">Semua</button>
             <button class="btn btn-ghost" id="btnCustom"    onclick="toggleCustom()">📅 Custom</button>
+            
             <div id="customPicker" style="display:none; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
               <input type="date" id="dateFrom" class="form-control" style="width:160px;" />
               <span style="color:#9CA3AF;">s/d</span>
               <input type="date" id="dateTo" class="form-control" style="width:160px;" />
               <button onclick="applyCustom()" class="btn btn-primary btn-sm">Terapkan</button>
+              
+              <button id="btnKirimEmail" onclick="kirimLaporanEmail()" class="btn btn-sm" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); color: white; box-shadow: 0 4px 12px rgba(21,128,61,0.25);">
+                📧 Kirim Laporan
+              </button>
             </div>
           </div>
 
@@ -303,6 +325,54 @@
 
       } catch (err) {
         showToast('Gagal memuat: ' + err.message, 'error');
+      }
+    }
+
+    // 🛠️ TAMBAHKAN FUNGSI INI DI DALAM TAG <script>
+    async function kirimLaporanEmail() {
+      const fromDate = document.getElementById('dateFrom').value;
+      const toDate = document.getElementById('dateTo').value;
+
+      // Validasi jika tanggal belum dipilih
+      if (!fromDate || !toDate) {
+        showToast('Pilih rentang tanggal terlebih dahulu', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnKirimEmail');
+      const originalText = btn.innerHTML;
+      
+      // Ubah status tombol jadi loading
+      btn.innerHTML = '⏳ Mengirim...';
+      btn.disabled = true;
+
+      try {
+        // Tembak langsung ke API Python Flask yang kita buat sebelumnya
+        const response = await fetch('http://127.0.0.1:5000/api/send-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            start_date: fromDate,
+            end_date: toDate
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          showToast('Laporan sukses dikirim ke email owner!', 'success');
+        } else {
+          showToast(data.message || 'Gagal mengirim laporan', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal terhubung ke server backend', 'error');
+      } finally {
+        // Kembalikan tombol ke keadaan semula
+        btn.innerHTML = originalText;
+        btn.disabled = false;
       }
     }
 

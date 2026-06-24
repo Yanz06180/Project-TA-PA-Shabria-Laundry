@@ -62,6 +62,7 @@ var api = {
     perKategori:    function(p) {
       return api.get('/laporan/per-kategori?'+new URLSearchParams(p||{}).toString());
     },
+    kirimEmail:     function(d) { return api.post('/send-report', d); }, // 🌟 BARU: Untuk kirim email laporan
   },
   addon: { all: function() { return api.get('/addon/'); } },
   user: {
@@ -73,7 +74,6 @@ var api = {
 
 // ── Auth guard ─────────────────────────────────────────────────
 async function requireAuth(roles) {
-  // Cek sessionStorage dulu (hasil login)
   var stored = sessionStorage.getItem('currentUser');
   if (stored) {
     try {
@@ -85,14 +85,13 @@ async function requireAuth(roles) {
           window.location.href = '../index.html';
           return null;
         }
-        u.role = r; // pastikan lowercase
+        u.role = r;
         return u;
       }
     } catch(e) {
       sessionStorage.removeItem('currentUser');
     }
   }
-  // Fallback ping server
   try {
     var u = await api.auth.me();
     u.role = (u.role || '').toLowerCase();

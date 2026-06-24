@@ -61,8 +61,6 @@ img { max-width: 100%; }
 /* ============================================================
    LAYOUT — Shell
    ============================================================ */
-
-/* Mobile-first shell (fullscreen app-like) */
 .shell {
   display: flex;
   flex-direction: column;
@@ -70,7 +68,6 @@ img { max-width: 100%; }
   background: var(--bg);
 }
 
-/* Desktop: sidebar + main */
 @media (min-width: 1025px) {
   .shell {
     flex-direction: row;
@@ -79,7 +76,6 @@ img { max-width: 100%; }
   }
 }
 
-/* ── Sidebar ── */
 .sidebar {
   display: none;
 }
@@ -106,7 +102,6 @@ img { max-width: 100%; }
   }
 }
 
-/* ── Top header (mobile + tablet) ── */
 .top-header {
   display: flex;
   align-items: center;
@@ -124,7 +119,6 @@ img { max-width: 100%; }
   .top-header { display: none; }
 }
 
-/* ── Bottom nav (mobile only) ── */
 .bottom-nav {
   display: flex;
   position: fixed;
@@ -141,10 +135,9 @@ img { max-width: 100%; }
   .bottom-nav { display: none; }
 }
 
-/* ── Page content padding ── */
 .page {
   padding: 20px;
-  padding-bottom: 88px; /* ruang untuk bottom nav */
+  padding-bottom: 88px;
 }
 
 @media (min-width: 768px) {
@@ -206,7 +199,6 @@ img { max-width: 100%; }
   border-top: 1px solid var(--gray-100);
 }
 
-/* Manager sidebar — green accent */
 .sidebar.manager .sidebar-nav-item.active {
   background: var(--green-light);
   color: var(--green-dark);
@@ -231,7 +223,6 @@ img { max-width: 100%; }
   color: var(--gray-900);
 }
 
-/* Stat card */
 .stat-card {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -245,7 +236,6 @@ img { max-width: 100%; }
 }
 .stat-card .stat-label { font-size: 12px; color: var(--gray-600); }
 
-/* ── Grid responsive ── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -258,7 +248,7 @@ img { max-width: 100%; }
 }
 
 /* ============================================================
-   HERO HEADER BANNER (gradient)
+   HERO HEADER BANNER
    ============================================================ */
 .hero-banner {
   background: linear-gradient(135deg, var(--blue-dark), var(--blue-mid));
@@ -376,7 +366,6 @@ img { max-width: 100%; }
   border-radius: 50%;
 }
 
-/* Status badges */
 .badge-antrean   { background: #F3F4F6; color: #374151; }
 .badge-dicuci    { background: #DBEAFE; color: #1E40AF; }
 .badge-disetrika { background: #FFEDD5; color: #C2410C; }
@@ -417,7 +406,6 @@ td {
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--gray-50); }
 
-/* Mobile: table card-style */
 @media (max-width: 767px) {
   .table-mobile thead { display: none; }
   .table-mobile tr {
@@ -583,7 +571,6 @@ tr:hover td { background: var(--gray-50); }
   .hide-desktop { display: none; }
 }
 
-/* Section title */
 .section-title {
   font-size: 16px;
   font-weight: 800;
@@ -594,9 +581,6 @@ tr:hover td { background: var(--gray-50); }
   .section-title { font-size: 18px; }
 }
 
-/* ============================================================
-   BOTTOM NAV ITEMS
-   ============================================================ */
 .bottom-nav-item {
   flex: 1;
   display: flex;
@@ -622,7 +606,6 @@ tr:hover td { background: var(--gray-50); }
 }
 .bottom-nav-item.active { color: var(--blue-dark); font-weight: 700; }
 .bottom-nav-item.active .icon-wrap { background: var(--blue-light); }
-/* Manager green */
 .bottom-nav-item.manager-active { color: var(--green-dark); font-weight: 700; }
 .bottom-nav-item.manager-active .icon-wrap { background: var(--green-light); }
 
@@ -665,4 +648,35 @@ tr:hover td { background: var(--gray-50); }
 @media (max-width: 480px) {
   .login-header { padding: 28px 20px 20px; }
   .login-body   { padding: 20px; }
+}
+
+/* ============================================================
+   🛠️ PATCH UNTUK SEJAJARESKAN UKURAN KOMPONEN FILTER LAPORAN
+   ============================================================ */
+.filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-row .btn,
+.filter-row .form-control {
+  height: 40px !important; /* Tinggi seragam wajib 40px */
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.filter-row .form-control {
+  padding: 0 12px !important;
+}
+/* Tombol Kirim Email bertema Hijau Gradasi khas Manager */
+.btn-success-gradient {
+  background: linear-gradient(135deg, var(--green-dark), var(--green-mid)) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(21,128,61,0.25) !important;
+}
+.btn-success-gradient:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
 }

@@ -17,7 +17,7 @@ TIDB_CONFIG = {
     "user":     "3gEW8w9g8ZZf3e4.root",                                  # ← USERNAME TiDB
     "password": "hNFHkpIYFN4d6ugd",                                      # ← PASSWORD TiDB
     "database": "shabria_laundry",                                       # ← Nama DB Anda
-    "ssl_ca": "D:/Kuliah Sem 6/PA/shabria-laundry/backend/isrgrootx1.pem", # ← Path sertifikat SSL
+    "ssl_ca": r"C:\Kuliah\Pengembangan Aplikasi\Laundry Shabria\App\Project-TA-PA-Shabria-Laundry\backend\isrgrootx1.pem", # ← Path sertifikat SSL
     "ssl_verify_cert": True,
     "ssl_verify_identity": True,
     "charset":  "utf8mb4",
