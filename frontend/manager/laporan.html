@@ -65,21 +65,28 @@
           </div>
 
           <!-- Filter -->
-          <div class="filter-row">
-            <button class="btn active" id="btnBulanIni"  onclick="setFilter('bulan-ini')">Bulan Ini</button>
+          <!-- Filter -->
+          <div class="filter-row" style="margin-bottom: 12px;">
+            <button class="btn btn-ghost" id="btnHariIni"   onclick="setFilter('hari-ini')">Hari Ini</button>
+            <button class="btn btn-ghost" id="btnMingguIni" onclick="setFilter('minggu-ini')">Minggu Ini</button>
+            <button class="btn btn-primary active" id="btnBulanIni" onclick="setFilter('bulan-ini')">Bulan Ini</button>
             <button class="btn btn-ghost" id="btnBulanLalu" onclick="setFilter('bulan-lalu')">Bulan Lalu</button>
+            <button class="btn btn-ghost" id="btnTahunIni"  onclick="setFilter('tahun-ini')">Tahun Ini</button>
+            <button class="btn btn-ghost" id="btnTahunLalu" onclick="setFilter('tahun-lalu')">Tahun Lalu</button>
             <button class="btn btn-ghost" id="btnSemua"     onclick="setFilter('semua')">Semua</button>
-            <button class="btn btn-ghost" id="btnCustom"    onclick="toggleCustom()">📅 Custom</button>
+            <button class="btn btn-ghost" id="btnCustom"    onclick="setFilter('custom')">📅 Custom</button>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <button id="btnKirimEmail" onclick="kirimLaporanEmail()" class="btn btn-success-gradient">
+              📧 Kirim Laporan
+            </button>
             
-            <div id="customPicker" style="display:none; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <div id="customPicker" style="display:none; gap:8px; align-items:center; margin-top:10px;">
               <input type="date" id="dateFrom" class="form-control" style="width:160px;" />
               <span style="color:#9CA3AF;">s/d</span>
               <input type="date" id="dateTo" class="form-control" style="width:160px;" />
               <button onclick="applyCustom()" class="btn btn-primary btn-sm">Terapkan</button>
-              
-              <button id="btnKirimEmail" onclick="kirimLaporanEmail()" class="btn btn-sm" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); color: white; box-shadow: 0 4px 12px rgba(21,128,61,0.25);">
-                📧 Kirim Laporan
-              </button>
             </div>
           </div>
 
@@ -107,7 +114,7 @@
           <!-- Charts -->
           <div class="chart-row">
             <div class="card">
-              <div class="card-header">Tren Bulanan</div>
+              <div class="card-header" id="barChartTitle">Tren Bulanan</div>
               <div style="padding:16px;"><canvas id="barChart" height="220"></canvas></div>
             </div>
             <div class="card">
@@ -148,31 +155,57 @@
 
     function getDateRange() {
       const today = new Date();
-      const fmt   = d => d.toISOString().slice(0,10);
-      if (currentFilter === 'bulan-ini') {
-        return { from: fmt(new Date(today.getFullYear(), today.getMonth(), 1)),
-                 to:   fmt(new Date(today.getFullYear(), today.getMonth()+1, 0)) };
-      }
-      if (currentFilter === 'bulan-lalu') {
-        return { from: fmt(new Date(today.getFullYear(), today.getMonth()-1, 1)),
-                 to:   fmt(new Date(today.getFullYear(), today.getMonth(), 0)) };
-      }
-      if (currentFilter === 'custom') return { from: customFrom, to: customTo };
-      return { from: '2000-01-01', to: '2099-12-31' };
+      const fmt = d => d.toISOString().slice(0,10);
+      
+      const map = {
+        'hari-ini':   { from: fmt(today), to: fmt(today) },
+        'minggu-ini': { from: fmt(new Date(today.setDate(today.getDate()-today.getDay()+1))), to: fmt(new Date()) },
+        'bulan-ini':  { from: fmt(new Date(today.getFullYear(), today.getMonth(), 1)), to: fmt(new Date(today.getFullYear(), today.getMonth()+1, 0)) },
+        'bulan-lalu': { from: fmt(new Date(today.getFullYear(), today.getMonth()-1, 1)), to: fmt(new Date(today.getFullYear(), today.getMonth(), 0)) },
+        'tahun-ini':  { from: `${today.getFullYear()}-01-01`, to: `${today.getFullYear()}-12-31` },
+        'tahun-lalu': { from: `${today.getFullYear()-1}-01-01`, to: `${today.getFullYear()-1}-12-31` },
+        'semua':      { from: '2000-01-01', to: '2099-12-31' },
+        'custom':     { from: customFrom, to: customTo }
+      };
+      return map[currentFilter] || map['bulan-ini'];
     }
 
     function setFilter(f) {
       currentFilter = f;
+      
+      // 1. Reset semua tombol filter jadi btn-ghost
       document.querySelectorAll('.filter-row .btn').forEach(b => {
-        b.className = b.className.replace(' btn-primary','').replace('active','') + ' btn-ghost';
+        b.classList.remove('btn-primary', 'active');
+        b.classList.add('btn-ghost');
       });
-      const btnMap = {'bulan-ini':'btnBulanIni','bulan-lalu':'btnBulanLalu','semua':'btnSemua'};
+
+      // 2. Kasih class active ke tombol yang diklik
+      const btnMap = {
+        'hari-ini':'btnHariIni', 'minggu-ini':'btnMingguIni',
+        'bulan-ini':'btnBulanIni', 'bulan-lalu':'btnBulanLalu',
+        'tahun-ini':'btnTahunIni', 'tahun-lalu':'btnTahunLalu',
+        'semua':'btnSemua', 'custom':'btnCustom'
+      };
+      
       const btn = document.getElementById(btnMap[f]);
-      if (btn) btn.className = 'btn btn-primary';
-      document.getElementById('rangeLabel').textContent =
-        f==='bulan-ini'?'Bulan Ini': f==='bulan-lalu'?'Bulan Lalu':'Semua Data';
-      document.getElementById('customPicker').style.display = 'none';
-      loadData();
+      if (btn) {
+        btn.classList.remove('btn-ghost');
+        btn.classList.add('btn-primary', 'active');
+      }
+
+      // 3. Update Label teks di atas
+      const labelMap = {
+        'hari-ini':'Hari Ini', 'minggu-ini':'Minggu Ini',
+        'bulan-ini':'Bulan Ini', 'bulan-lalu':'Bulan Lalu',
+        'tahun-ini':'Tahun Ini', 'tahun-lalu':'Tahun Lalu',
+        'semua':'Semua Data', 'custom':'Custom'
+      };
+      document.getElementById('rangeLabel').textContent = labelMap[f] || 'Laporan';
+      
+      // 4. Handle visibility custom picker
+      document.getElementById('customPicker').style.display = (f === 'custom') ? 'flex' : 'none';
+      
+      if (f !== 'custom') loadData();
     }
 
     function toggleCustom() {
@@ -235,67 +268,115 @@
             <p style="font-size:11px; color:#9CA3AF; margin-top:2px;">${s.sub}</p>
           </div>`).join('');
 
-        /* Bar chart */
+        /* Bar chart (DINAMIS) */
         const barMap = {};
-        paid.forEach(t=>{
-          const m=(t.tanggal_masuk||'').slice(0,7);
-          if(!barMap[m])barMap[m]={omzet:0,pengeluaran:0};
-          barMap[m].omzet+=t.total_bayar||0;
+        
+        // 1. Tentukan format kunci pengelompokan (grouping key)
+        // Kalau pilih hari/minggu -> grup per hari (DD)
+        // Kalau pilih bulan -> grup per hari (DD) atau per minggu (w)
+        // Kalau pilih tahun/semua -> grup per bulan (MM)
+        const isTahunan = ['tahun-ini', 'tahun-lalu', 'semua'].includes(currentFilter);
+        const isBulanan = ['bulan-ini', 'bulan-lalu'].includes(currentFilter);
+        const isHarian  = ['hari-ini', 'minggu-ini'].includes(currentFilter);
+
+        paid.forEach(t => {
+          const dObj = new Date(t.tanggal_masuk);
+          // Key untuk grouping:
+          // isTahunan: '2026-06' (Group per bulan)
+          // isBulanan: '23' (Group per tanggal)
+          // isHarian: '23' (Group per tanggal)
+          const m = isTahunan 
+            ? `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}` 
+            : `${dObj.getDate()}`;
+          
+          if (!barMap[m]) barMap[m] = { omzet: 0, pengeluaran: 0 };
+          barMap[m].omzet += Number(t.total_bayar || 0);
         });
-        pengeluaran.forEach(e=>{
-          const m=(e.tanggal||'').slice(0,7);
-          if(!barMap[m])barMap[m]={omzet:0,pengeluaran:0};
-          barMap[m].pengeluaran+=e.jumlah||0;
+        
+        pengeluaran.forEach(e => {
+          const dObj = new Date(e.tanggal);
+          const m = isTahunan 
+            ? `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}` 
+            : `${dObj.getDate()}`;
+          
+          if (!barMap[m]) barMap[m] = { omzet: 0, pengeluaran: 0 };
+          barMap[m].pengeluaran += Number(e.jumlah || 0);
         });
-        const sorted = Object.entries(barMap).sort(([a],[b])=>a.localeCompare(b));
-        const bLabels= sorted.map(([m])=>BULAN[m.slice(5,7)]??m.slice(5,7));
-        const bOmzet = sorted.map(([,v])=>v.omzet);
-        const bPengl = sorted.map(([,v])=>v.pengeluaran);
+
+        // 2. Sorting agar urut
+        const sorted = Object.entries(barMap).sort(([a],[b])=> a.toString().localeCompare(b.toString()));
+        
+        // 3. Label Dinamis
+        const bLabels = sorted.map(([m]) => {
+           if (isTahunan) return BULAN[m.slice(5,7)] + ' ' + m.slice(0,4); // Jan 2026
+           return 'Tgl ' + m; // Tgl 23
+        });
+        const bOmzet = sorted.map(([,v]) => v.omzet);
+        const bPengl = sorted.map(([,v]) => v.pengeluaran);
 
         if (barChartInst) barChartInst.destroy();
-        barChartInst = new Chart(document.getElementById('barChart'),{
-          type:'bar',
-          data:{ labels:bLabels, datasets:[
-            {label:'Omzet',       data:bOmzet, backgroundColor:'#1565C0', borderRadius:5},
-            {label:'Pengeluaran', data:bPengl, backgroundColor:'#FCA5A5', borderRadius:5},
-          ]},
-          options:{
-            responsive:true, maintainAspectRatio:false,
-            plugins:{legend:{display:false},
-              tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatRupiah(ctx.raw)}`}}},
-            scales:{
-              x:{grid:{display:false},ticks:{font:{size:11},color:'#9CA3AF'}},
-              y:{grid:{color:'#F3F4F6'},ticks:{callback:v=>'Rp'+(v/1000)+'K',font:{size:10},color:'#9CA3AF'}},
+        barChartInst = new Chart(document.getElementById('barChart'), {
+          type: 'bar',
+          data: { 
+            labels: bLabels, 
+            datasets: [
+              { label: 'Omzet', data: bOmzet, backgroundColor: '#1565C0', borderRadius: 5 },
+              { label: 'Pengeluaran', data: bPengl, backgroundColor: '#FCA5A5', borderRadius: 5 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { 
+              legend: { display: true, position: 'top' },
+              tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatRupiah(ctx.raw)}` } }
+            },
+            scales: {
+              x: { grid: { display: false } },
+              y: { beginAtZero: true }
             }
           }
         });
 
-        /* Pie */
-        const katMap={};
-        paid.forEach(t=>{
-          const items = t.detail||[];
-          if(items.length){
-            items.forEach(d=>{ const k=getKat(d.lay_nama); katMap[k]=(katMap[k]||0)+(d.sub_harga||0); });
+        /* Pie (OMZET PER KATEGORI) */
+        const katMap = {};
+        paid.forEach(t => {
+          const items = t.detail || [];
+          if (items.length) {
+            items.forEach(d => { 
+              const k = getKat(d.lay_nama); 
+              katMap[k] = (katMap[k] || 0) + Number(d.sub_harga || 0); // Di-convert ke angka!
+            });
           } else {
-            const k=getKat(''); katMap[k]=(katMap[k]||0)+(t.total_bayar||0);
+            const k = getKat(''); 
+            katMap[k] = (katMap[k] || 0) + Number(t.total_bayar || 0); // Di-convert ke angka!
           }
         });
-        const pieLabels=Object.keys(katMap);
-        const pieData=Object.values(katMap);
-        const total=pieData.reduce((s,v)=>s+v,0);
+        
+        const pieLabels = Object.keys(katMap);
+        const pieData = Object.values(katMap);
+        const total = pieData.reduce((s, v) => s + v, 0);
 
-        if(pieChartInst) pieChartInst.destroy();
-        pieChartInst = new Chart(document.getElementById('pieChart'),{
-          type:'doughnut',
-          data:{labels:pieLabels,datasets:[{data:pieData,backgroundColor:COLORS,borderWidth:2,borderColor:'white'}]},
-          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-            tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${formatRupiah(ctx.raw)}`}}},cutout:'58%'}
+        if (pieChartInst) pieChartInst.destroy();
+        pieChartInst = new Chart(document.getElementById('pieChart'), {
+          type: 'doughnut',
+          data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: COLORS, borderWidth: 2, borderColor: 'white' }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { 
+              legend: { display: false },
+              tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatRupiah(ctx.raw)}` } }
+            }, 
+            cutout: '58%'
+          }
         });
-        document.getElementById('pieLegend').innerHTML = pieLabels.map((l,i)=>`
+        
+        document.getElementById('pieLegend').innerHTML = pieLabels.map((l, i) => `
           <div style="display:flex; align-items:center; gap:5px;">
             <div style="width:10px; height:10px; border-radius:3px; background:${COLORS[i]};"></div>
             <span style="font-size:11px; color:#374151;">${l}</span>
-            <span style="font-size:11px; font-weight:700; color:${COLORS[i]};">${Math.round((pieData[i]/Math.max(1,total))*100)}%</span>
+            <span style="font-size:11px; font-weight:700; color:${COLORS[i]};">
+              ${total === 0 ? 0 : Math.round((pieData[i] / total) * 100)}%
+            </span>
           </div>`).join('');
 
         /* Detail rows */
@@ -323,6 +404,19 @@
               </div>`).join('')
           : '<p style="text-align:center; color:#9CA3AF; padding:30px 0;">Tidak ada pengeluaran</p>';
 
+          // ... di dalam fungsi loadData() setelah mendapatkan data
+          const titleMap = {
+            'hari-ini': 'Tren Harian',
+            'minggu-ini': 'Tren Harian (Minggu Ini)',
+            'bulan-ini': 'Tren Bulanan',
+            'bulan-lalu': 'Tren Bulanan (Bulan Lalu)',
+            'tahun-ini': 'Tren Tahunan',
+            'tahun-lalu': 'Tren Tahunan (Tahun Lalu)',
+            'semua': 'Tren Tahunan Keseluruhan',
+            'custom': 'Tren Berdasarkan Rentang'
+          };
+          document.getElementById('barChartTitle').textContent = titleMap[currentFilter] || 'Tren Penjualan';
+
       } catch (err) {
         showToast('Gagal memuat: ' + err.message, 'error');
       }
@@ -330,38 +424,28 @@
 
     // 🛠️ TAMBAHKAN FUNGSI INI DI DALAM TAG <script>
     async function kirimLaporanEmail() {
-      const fromDate = document.getElementById('dateFrom').value;
-      const toDate = document.getElementById('dateTo').value;
+      // Ambil tanggal sesuai filter apa yang lagi aktif sekarang
+      const { from, to } = getDateRange();
 
-      // Validasi jika tanggal belum dipilih
-      if (!fromDate || !toDate) {
-        showToast('Pilih rentang tanggal terlebih dahulu', 'error');
+      if (currentFilter === 'custom' && (!from || !to)) {
+        showToast('Pilih rentang tanggal custom terlebih dahulu', 'error');
         return;
       }
 
       const btn = document.getElementById('btnKirimEmail');
       const originalText = btn.innerHTML;
       
-      // Ubah status tombol jadi loading
       btn.innerHTML = '⏳ Mengirim...';
       btn.disabled = true;
 
       try {
-        // Tembak langsung ke API Python Flask yang kita buat sebelumnya
-        const response = await fetch('http://127.0.0.1:5000/api/send-report', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            start_date: fromDate,
-            end_date: toDate
-          })
+        // Tembak pake fungsi bawaan api.js (lolos dari CORS)
+        const data = await api.laporan.kirimEmail({
+          start_date: from,
+          end_date: to
         });
 
-        const data = await response.json();
-
-        if (response.ok && data.status === 'success') {
+        if (data && data.status === 'success') {
           showToast('Laporan sukses dikirim ke email owner!', 'success');
         } else {
           showToast(data.message || 'Gagal mengirim laporan', 'error');
@@ -370,7 +454,6 @@
         console.error(err);
         showToast('Gagal terhubung ke server backend', 'error');
       } finally {
-        // Kembalikan tombol ke keadaan semula
         btn.innerHTML = originalText;
         btn.disabled = false;
       }

@@ -680,3 +680,32 @@ tr:hover td { background: var(--gray-50); }
   opacity: 0.9 !important;
   transform: translateY(-1px) !important;
 }
+
+/* ============================================================
+   🛠️ PATCH UNTUK TATA LETAK TOMBOL KIRIM LAPORAN
+   ============================================================ */
+.filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap; 
+  align-items: center;
+}
+
+#btnKirimEmail {
+  margin-left: auto; /* Dorong tombol ke kanan paling ujung */
+}
+
+/* Responsif untuk layar kecil (HP/Tablet) agar tombol tidak berantakan */
+@media (max-width: 1024px) {
+  #btnKirimEmail {
+    margin-left: 0; 
+    width: 100%;    /* Tombol jadi full lebar jika layar sempit */
+    order: 99;      /* Memastikan tombol selalu berada di urutan paling bawah */
+  }
+}
+
+.btn.active {
+  background: var(--blue-dark) !important;
+  color: white !important;
+  transform: scale(1.05); /* Sedikit membesar biar kelihatan */
+}

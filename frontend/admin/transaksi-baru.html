@@ -622,11 +622,20 @@
       btn.disabled = true; btn.textContent = 'Menyimpan...';
       try {
         const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
-        const selT = [...selectedTambahan].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+        
+        // --- INI YANG BIKIN ERROR KEMAREN UDAH GW FIX ---
+        const selT = Object.keys(selectedTambahan).map(id => {
+          const a = addons.find(x => x.id_add_on == id);
+          return { ...a, qty: selectedTambahan[id] };
+        }).filter(x => x.id_add_on);
+        
         const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
-        const extraTotal = selT.reduce((s,a) => s + a.tambahan_harga * Math.max(1, totalKgKiloan), 0)
+        
+        const extraTotal = selT.reduce((s,a) => s + (a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan)), 0)
                          + selA.reduce((s,a) => s + a.tambahan_harga, 0);
+                         
         const grandTotal = cart.reduce((s,i) => s + i.subTotal, 0) + extraTotal;
+        // ------------------------------------------------
 
         const result = await api.transaksi.create({
           id_pelanggan:     selectedCustomer.id_pelanggan,
