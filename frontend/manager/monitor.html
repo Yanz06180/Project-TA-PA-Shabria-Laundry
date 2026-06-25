@@ -255,6 +255,19 @@
           </div>`;
       }).join('');
     }
+    function kirimStatusWA(idTrx, nama, nomor) {
+    const trx = allTrx.find(t => t.id_transaksi === idTrx);
+    const status = getStatus(trx); 
+    
+    let phone = nomor;
+    if(phone.startsWith('0')) phone = '62' + phone.substring(1);
+
+    const text = `Halo Kak *${nama}*!%0A`
+               + `Update cucian *${idTrx}* Anda saat ini: *${status}*.%0A%0A`
+               + `Terima kasih telah menggunakan jasa Shabria Laundry!`;
+    
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+  }
   </script>
 </body>
 </html>

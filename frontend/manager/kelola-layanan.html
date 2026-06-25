@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Layanan — Admin Shabria Laundry</title>
+  <title>Layanan — Manager Shabria Laundry</title>
   <link rel="stylesheet" href="../css/main.css" />
   <style>
     .page-inner { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
@@ -22,9 +22,18 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      transition: box-shadow 0.15s;
+      transition: all 0.2s;
     }
     .layanan-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+    
+    /* Indikator Aktif / Nonaktif */
+    .layanan-card.active { border-left: 5px solid #16A34A; }
+    .layanan-card.inactive { 
+      border-left: 5px solid #EF4444; 
+      opacity: 0.65; 
+      background: #F9FAFB;
+    }
+    .layanan-card.inactive .layanan-icon { filter: grayscale(100%); }
 
     .layanan-icon {
       width: 52px; height: 52px;
@@ -63,6 +72,14 @@
     }
     .icon-opt.selected { background: #DBEAFE; border-color: #1565C0; }
 
+    /* CSS Untuk Toggle Switch Aktif/Nonaktif */
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin-top: 4px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #FCA5A5; transition: .3s; border-radius: 22px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: #16A34A; }
+    input:checked + .slider:before { transform: translateX(18px); }
+
     @media (max-width: 600px) {
       .layanan-grid { grid-template-columns: 1fr; }
       .icon-grid    { grid-template-columns: repeat(6,1fr); }
@@ -70,7 +87,7 @@
   </style>
 </head>
 <body>
-  <div id="app" style="display:flex; height:100vh; overflow:hidden; background:#F0F7FF;">
+  <div id="app" style="display:flex; height:100vh; overflow:hidden; background:#F0FFF4;">
     <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0;"></div>
     <div id="overlay" onclick="closeSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:198;"></div>
     <div id="mobileSidebar" style="display:none; position:fixed; top:0; left:0; bottom:0; width:260px; z-index:199;"></div>
@@ -81,7 +98,6 @@
       <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
         <div class="page-inner">
 
-          <!-- Bagian Title & Tombol -->
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
             <div>
               <h1 style="font-size:22px; font-weight:900; color:#111827;">Manajemen Layanan</h1>
@@ -90,12 +106,13 @@
             <button onclick="openDynamicModal()" class="btn btn-primary" id="btnTambahUtama">＋ Tambah Layanan</button>
           </div>
 
-          <!-- Bagian Dropdown Filter & Tab Menu -->
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:20px;">
-              <select id="katalogFilter" onchange="filterKat(this.value)" style="padding:10px 16px; border-radius:12px; border:1.5px solid #BFDBFE; font-size:14px; font-weight:600; color:#1565C0; background:#EFF6FF; outline:none; cursor:pointer; min-width:220px;">
-                  <option value="Semua">Tampilkan Semua Katalog</option>
-                  <!-- Diisi otomatis sama JS -->
-              </select>
+              <div style="display:flex; gap:10px; align-items:center;">
+                  <select id="katalogFilter" onchange="filterKat(this.value)" style="padding:10px 16px; border-radius:12px; border:1.5px solid #BFDBFE; font-size:14px; font-weight:600; color:#1565C0; background:#EFF6FF; outline:none; cursor:pointer; min-width:220px;">
+                      <option value="Semua">Tampilkan Semua</option>
+                  </select>
+                  <button id="btnTambahKategori" onclick="openKategoriModal()" class="btn btn-outline btn-sm" style="height:42px; padding: 0 16px;">＋ Katalog Baru</button>
+              </div>
               
               <div style="display:flex; background:#F3F4F6; border-radius:12px; padding:4px; gap:4px;">
                   <button id="btnTabLayanan" onclick="switchTab('layanan')" style="padding:8px 16px; border-radius:8px; border:none; background:white; font-weight:700; color:#1565C0; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer; transition:0.2s;">🧺 Layanan Utama</button>
@@ -103,13 +120,30 @@
               </div>
           </div>
 
-          <div class="pill-row" id="catFilter" style="margin-bottom:20px;"></div>
-
           <div class="layanan-grid" id="layananGrid">
             <p style="grid-column:1/-1; text-align:center; color:#9CA3AF; padding:40px 0;">Memuat data...</p>
           </div>
         </div>
       </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalKategori">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <h3 id="modalKategoriTitle">Tambah Baru</h3>
+        <button onclick="document.getElementById('modalKategori').classList.remove('show')" style="background:none; border:none; cursor:pointer; font-size:22px; color:#9CA3AF;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama <span style="color:#EF4444;">*</span></label>
+          <input class="form-control" id="fNamaKategori" placeholder="Ketik nama baru disini..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="saveKategori()" class="btn btn-primary">Simpan</button>
+        <button onclick="document.getElementById('modalKategori').classList.remove('show')" class="btn btn-ghost">Batal</button>
+      </div>
     </div>
   </div>
 
@@ -167,16 +201,34 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="deleteModal">
-    <div class="modal" style="max-width:360px;">
-      <div class="modal-body" style="text-align:center; padding:32px 28px;">
-        <span style="font-size:48px; display:block; margin-bottom:16px;">🗑️</span>
-        <h3 style="font-size:17px; font-weight:800; color:#111827; margin-bottom:8px;">Hapus Layanan?</h3>
-        <p id="deleteLabel" style="font-size:14px; color:#6B7280; margin-bottom:24px;"></p>
-        <div style="display:flex; gap:10px;">
-          <button onclick="confirmDelete()" class="btn btn-danger" style="flex:1;">Hapus</button>
-          <button onclick="document.getElementById('deleteModal').classList.remove('show')" class="btn btn-ghost" style="flex:1;">Batal</button>
+  <div class="modal-overlay" id="modalAddon">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header">
+        <h3 id="modalTitleAddon">Tambah Add-on</h3>
+        <button onclick="closeModalAddon()" style="background:none; border:none; cursor:pointer; font-size:22px; color:#9CA3AF;">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
+        <input type="hidden" id="editIdAddon" />
+
+        <div class="form-group">
+          <label class="form-label">Kategori <span style="color:#EF4444;">*</span></label>
+          <select class="form-control" id="fKategoriAddon">
+            </select>
         </div>
+
+        <div class="form-group">
+          <label class="form-label">Nama Tambahan <span style="color:#EF4444;">*</span></label>
+          <input class="form-control" id="fNamaAddon" placeholder="Contoh: Packing Kardus" />
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Tambahan Harga (Rp) <span style="color:#EF4444;">*</span></label>
+          <input class="form-control" id="fHargaAddon" type="number" placeholder="5000" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="saveAddon()" class="btn btn-primary">Simpan</button>
+        <button onclick="closeModalAddon()" class="btn btn-ghost">Batal</button>
       </div>
     </div>
   </div>
@@ -191,12 +243,14 @@
     let allLayanan = [], jenisAll = [], allAddons = [];
     let activeKat = 'Semua';
     let activeTab = 'layanan'; // Bisa 'layanan' atau 'addon'
-    let deleteId = null;
-    let deleteMode = ''; // 'layanan' atau 'addon'
+    
+    // Default kategori Add-on. Nanti ditambah dinamis dari database.
+    let addonCategories = ['Add-on', 'Antar Jemput']; 
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const u = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-      initAdminLayout(u, 'layanan');
+      const user = await requireAuth(['manager', 'owner']);
+      if (!user) return;
+      initManagerLayout(user, 'kelola-layanan');
 
       document.getElementById('iconGrid').innerHTML = ICONS.map(ic => `
         <button type="button" class="icon-opt ${ic==='🧺'?'selected':''}" onclick="selectIcon('${ic}', this)">${ic}</button>`).join('');
@@ -209,37 +263,56 @@
         [allLayanan, jenisAll, allAddons] = await Promise.all([
           api.layanan.all(), api.layanan.jenis(), api.addon.all()
         ]);
+        
+        // Ekstrak kategori unik dari add-on yang udah ada di database
+        const dbAddonKats = [...new Set(allAddons.map(a => a.kategori).filter(Boolean))];
+        dbAddonKats.forEach(k => {
+            if (!addonCategories.includes(k)) addonCategories.push(k);
+        });
 
-        // Isi form katalog
-        document.getElementById('fJenis').innerHTML = '<option value="">Pilih katalog...</option>' + 
-          jenisAll.map(j => `<option value="${j.id_jenis_barang}">${j.jenis_nama}</option>`).join('');
-
-        // Isi dropdown filter
-        document.getElementById('katalogFilter').innerHTML = '<option value="Semua">Tampilkan Semua Katalog</option>' + 
-          jenisAll.map(j => `<option value="${j.jenis_nama}">${j.jenis_nama}</option>`).join('');
-
-        renderGrid();
+        // Refresh filter and modal selects based on current tab
+        switchTab(activeTab, true);
       } catch (err) { showToast('Gagal memuat data', 'error'); }
     }
 
-    function switchTab(tab) {
+    function switchTab(tab, isReload = false) {
       activeTab = tab;
+      if (!isReload) activeKat = 'Semua'; // Reset filter kalau pindah tab manual
+
       const btnLayanan = document.getElementById('btnTabLayanan');
       const btnAddon = document.getElementById('btnTabAddon');
       const filter = document.getElementById('katalogFilter');
+      const btnKat = document.getElementById('btnTambahKategori');
       const btnTambah = document.getElementById('btnTambahUtama');
 
       if (tab === 'layanan') {
         btnLayanan.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:white; font-weight:700; color:#1565C0; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer;';
         btnAddon.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:transparent; font-weight:600; color:#6B7280; cursor:pointer;';
-        filter.style.display = 'block';
+        
+        btnKat.innerHTML = '＋ Katalog Baru';
         btnTambah.innerHTML = '＋ Tambah Layanan';
+        
+        // Isi dropdown katalog untuk filter & modal form
+        filter.innerHTML = '<option value="Semua">Tampilkan Semua Katalog</option>' + 
+          jenisAll.map(j => `<option value="${j.jenis_nama}">${j.jenis_nama}</option>`).join('');
+        document.getElementById('fJenis').innerHTML = '<option value="">Pilih katalog...</option>' + 
+          jenisAll.map(j => `<option value="${j.id_jenis_barang}">${j.jenis_nama}</option>`).join('');
+          
       } else {
         btnAddon.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:white; font-weight:700; color:#1565C0; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer;';
         btnLayanan.style.cssText = 'padding:8px 16px; border-radius:8px; border:none; background:transparent; font-weight:600; color:#6B7280; cursor:pointer;';
-        filter.style.display = 'none'; // Sembunyikan filter katalog kalau lagi buka add-on
+        
+        btnKat.innerHTML = '＋ Kategori Baru';
         btnTambah.innerHTML = '＋ Tambah Add-on';
+        
+        // Isi dropdown filter & form pakai Kategori Dinamis
+        filter.innerHTML = '<option value="Semua">Tampilkan Semua Kategori</option>' + 
+          addonCategories.map(k => `<option value="${k}">${k}</option>`).join('');
+        document.getElementById('fKategoriAddon').innerHTML = 
+          addonCategories.map(k => `<option value="${k}">${k}</option>`).join('');
       }
+      
+      filter.value = activeKat;
       renderGrid();
     }
 
@@ -252,48 +325,135 @@
       const grid = document.getElementById('layananGrid');
       
       if (activeTab === 'layanan') {
-        const list = activeKat === 'Semua' ? allLayanan : allLayanan.filter(l => l.jenis_nama === activeKat);
+        let list = activeKat === 'Semua' ? [...allLayanan] : allLayanan.filter(l => l.jenis_nama === activeKat);
         document.getElementById('totalLabel').textContent = `${list.length} layanan terdaftar`;
         
+        // Sorting: Yang aktif di atas, nonaktif di bawah
+        list.sort((a, b) => {
+            const aAct = (a.aktif === undefined || a.aktif === true || a.aktif === 1) ? 1 : 0;
+            const bAct = (b.aktif === undefined || b.aktif === true || b.aktif === 1) ? 1 : 0;
+            return bAct - aAct; 
+        });
+
         if (!list.length) {
-          grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0;"><span style="font-size:48px;">📋</span><p style="color:#9CA3AF; margin-top:12px;">Kosong bro</p></div>`;
+          grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0;"><span style="font-size:48px;">📋</span><p style="color:#9CA3AF; margin-top:12px;">Belum ada Layanan Utama</p></div>`;
           return;
         }
-        grid.innerHTML = list.map(l => `
-          <div class="layanan-card">
+        grid.innerHTML = list.map(l => {
+          const isActive = (l.aktif === undefined || l.aktif === true || l.aktif === 1);
+          return `
+          <div class="layanan-card ${isActive ? 'active' : 'inactive'}">
             <div class="layanan-icon">${l.icon || '🧺'}</div>
             <div style="flex:1; min-width:0;">
               <p style="font-size:13px; font-weight:700; color:#111827;">${l.lay_nama}</p>
               <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:3px;">${formatRupiah(l.lay_harga)}/${l.satuan}</p>
               <span class="cat-chip">${l.jenis_nama}</span>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              <button onclick="openEditLayanan(${l.id_layanan})" style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer;">✏️</button>
-              <button onclick="openDelete(${l.id_layanan}, '${l.lay_nama}', 'layanan')" style="width:34px; height:34px; border-radius:10px; background:#FEF2F2; border:none; cursor:pointer;">🗑️</button>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <label class="switch" title="Aktif / Nonaktif">
+                <input type="checkbox" onchange="toggleAktif(${l.id_layanan}, 'layanan', this.checked)" ${isActive ? 'checked' : ''}>
+                <span class="slider"></span>
+              </label>
+              <button onclick="openEditLayanan(${l.id_layanan})" style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer; margin-top:4px;">✏️</button>
             </div>
-          </div>`).join('');
+          </div>`
+        }).join('');
       } else {
-        document.getElementById('totalLabel').textContent = `${allAddons.length} Add-on terdaftar`;
-        if (!allAddons.length) {
+        let list = activeKat === 'Semua' ? [...allAddons] : allAddons.filter(a => (a.kategori || 'Add-on') === activeKat);
+        document.getElementById('totalLabel').textContent = `${list.length} Add-on terdaftar`;
+        
+        // Sorting: Yang aktif di atas
+        list.sort((a, b) => {
+            const aAct = (a.aktif === undefined || a.aktif === true || a.aktif === 1) ? 1 : 0;
+            const bAct = (b.aktif === undefined || b.aktif === true || b.aktif === 1) ? 1 : 0;
+            return bAct - aAct; 
+        });
+
+        if (!list.length) {
           grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 0;"><span style="font-size:48px;">✨</span><p style="color:#9CA3AF; margin-top:12px;">Belum ada Add-on</p></div>`;
           return;
         }
-        grid.innerHTML = allAddons.map(a => `
-          <div class="layanan-card">
-            <div class="layanan-icon">✨</div>
+        grid.innerHTML = list.map(a => {
+          const isActive = (a.aktif === undefined || a.aktif === true || a.aktif === 1);
+          const kat = a.kategori || 'Add-on';
+          return `
+          <div class="layanan-card ${isActive ? 'active' : 'inactive'}">
+            <div class="layanan-icon">${kat === 'Antar Jemput' ? '🏍️' : '✨'}</div>
             <div style="flex:1; min-width:0;">
               <p style="font-size:13px; font-weight:700; color:#111827;">${a.add_nama}</p>
               <p style="font-size:12px; color:#1565C0; font-weight:600; margin-top:3px;">+ ${formatRupiah(a.tambahan_harga)}</p>
+              <span class="cat-chip">${kat}</span>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-              <button onclick="openEditAddon(${a.id_add_on})" style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer;">✏️</button>
-              <button onclick="openDelete(${a.id_add_on}, '${a.add_nama}', 'addon')" style="width:34px; height:34px; border-radius:10px; background:#FEF2F2; border:none; cursor:pointer;">🗑️</button>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <label class="switch" title="Aktif / Nonaktif">
+                <input type="checkbox" onchange="toggleAktif(${a.id_add_on}, 'addon', this.checked)" ${isActive ? 'checked' : ''}>
+                <span class="slider"></span>
+              </label>
+              <button onclick="openEditAddon(${a.id_add_on})" style="width:34px; height:34px; border-radius:10px; background:#EFF6FF; border:none; cursor:pointer; margin-top:4px;">✏️</button>
             </div>
-          </div>`).join('');
+          </div>`
+        }).join('');
       }
     }
 
-    // --- LOGIKA LAYANAN UTAMA ---
+    // --- LOGIKA TOGGLE AKTIF/NONAKTIF ---
+    async function toggleAktif(id, type, isChecked) {
+      try {
+        if (type === 'layanan') {
+          const item = allLayanan.find(x => x.id_layanan === id);
+          item.aktif = isChecked;
+          await api.layanan.update(id, item);
+        } else {
+          const item = allAddons.find(x => x.id_add_on === id);
+          item.aktif = isChecked;
+          await api.addon.update(id, item);
+        }
+        showToast(`Status berhasil diubah jadi ${isChecked ? 'Aktif' : 'Nonaktif'}`, 'success');
+        renderGrid(); 
+      } catch(err) {
+        showToast('Gagal mengubah status', 'error');
+        loadData(); 
+      }
+    }
+
+    // --- LOGIKA BIKIN KATEGORI / KATALOG BARU DINAMIS ---
+    function openKategoriModal() {
+      const title = activeTab === 'layanan' ? 'Tambah Katalog Baru' : 'Tambah Kategori Add-on';
+      document.getElementById('modalKategoriTitle').textContent = title;
+      document.getElementById('fNamaKategori').value = '';
+      document.getElementById('modalKategori').classList.add('show');
+    }
+
+    async function saveKategori() {
+      const nama = document.getElementById('fNamaKategori').value.trim();
+      if (!nama) { showToast('Nama tidak boleh kosong', 'error'); return; }
+
+      if (activeTab === 'layanan') {
+        // Layanan Utama: Wajib nembak API karena relasi ke tabel jenis_barang
+        try {
+          await api.layanan.createJenis({ jenis_nama: nama });
+          document.getElementById('modalKategori').classList.remove('show');
+          showToast('Katalog berhasil ditambahkan', 'success');
+          await loadData(); 
+        } catch(err) { showToast(err.message, 'error'); }
+      } else {
+        // Add-on: Cukup masukin ke Array Lokal, nanti masuk DB pas Add-on nya di-save
+        if (!addonCategories.includes(nama)) {
+          addonCategories.push(nama);
+          switchTab('addon', true); // Refresh UI dropdown
+          document.getElementById('modalKategori').classList.remove('show');
+          showToast('Kategori siap digunakan!', 'success');
+          
+          // Langsung buka modal tambah Add-on dan pilih kategori barunya
+          openDynamicModal();
+          document.getElementById('fKategoriAddon').value = nama;
+        } else {
+          showToast('Kategori sudah ada di daftar', 'error');
+        }
+      }
+    }
+
+    // --- LOGIKA MODAL TAMBAH/EDIT ---
     function openDynamicModal() {
       if(activeTab === 'layanan') {
         document.getElementById('modalTitle').textContent = 'Tambah Layanan';
@@ -331,12 +491,18 @@
         satuan: document.getElementById('fSatuan').value,
         estimasi_hari: Number(document.getElementById('fEst').value) || 0,
         icon: document.getElementById('fIcon').value,
-        id_jenis_barang: Number(document.getElementById('fJenis').value)
+        id_jenis_barang: Number(document.getElementById('fJenis').value),
+        aktif: true 
       };
+      if (id) {
+          const l = allLayanan.find(x => x.id_layanan === Number(id));
+          data.aktif = l.aktif !== undefined ? l.aktif : true;
+      }
       try {
         if(id) await api.layanan.update(Number(id), data);
         else await api.layanan.create(data);
         closeModal(); loadData();
+        showToast('Layanan berhasil disimpan', 'success');
       } catch(err) { showToast(err.message, 'error'); }
     }
 
@@ -351,13 +517,14 @@
     }
     function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
-    // --- LOGIKA ADD-ON ---
+    // --- LOGIKA MODAL TAMBAH/EDIT ADDON ---
     function openEditAddon(id) {
       const a = allAddons.find(x => x.id_add_on === id);
       document.getElementById('modalTitleAddon').textContent = 'Edit Add-on';
       document.getElementById('editIdAddon').value = id;
       document.getElementById('fNamaAddon').value = a.add_nama;
       document.getElementById('fHargaAddon').value = a.tambahan_harga;
+      document.getElementById('fKategoriAddon').value = a.kategori || 'Add-on';
       document.getElementById('modalAddon').classList.add('show');
     }
 
@@ -365,31 +532,23 @@
       const id = document.getElementById('editIdAddon').value;
       const data = {
         add_nama: document.getElementById('fNamaAddon').value,
-        tambahan_harga: Number(document.getElementById('fHargaAddon').value)
+        tambahan_harga: Number(document.getElementById('fHargaAddon').value),
+        kategori: document.getElementById('fKategoriAddon').value,
+        aktif: true
       };
+      if (id) {
+          const a = allAddons.find(x => x.id_add_on === Number(id));
+          data.aktif = a.aktif !== undefined ? a.aktif : true;
+      }
       try {
         if(id) await api.addon.update(Number(id), data);
         else await api.addon.create(data);
         closeModalAddon(); loadData();
+        showToast('Add-on berhasil disimpan', 'success');
       } catch(err) { showToast(err.message, 'error'); }
     }
     function closeModalAddon() { document.getElementById('modalAddon').classList.remove('show'); }
 
-    // --- LOGIKA HAPUS (GLOBAL) ---
-    function openDelete(id, nama, mode) {
-      deleteId = id; deleteMode = mode;
-      document.getElementById('deleteLabel').textContent = `Yakin hapus ${mode} "${nama}"?`;
-      document.getElementById('deleteModal').classList.add('show');
-    }
-
-    async function confirmDelete() {
-      try {
-        if (deleteMode === 'layanan') await api.layanan.delete(deleteId);
-        else await api.addon.delete(deleteId);
-        document.getElementById('deleteModal').classList.remove('show');
-        loadData();
-      } catch(err) { showToast(err.message, 'error'); }
-    }
   </script>
 </body>
 </html>

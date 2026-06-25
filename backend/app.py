@@ -10,6 +10,11 @@ from routes.laporan   import laporan_bp
 from routes.addon     import addon_bp
 from routes.user      import user_bp
 from routes.report    import report_bp
+from flask import Flask, request, jsonify
+from db import query, execute # 🌟 WAJIB: Import dari db.py
+import requests # 🌟 WAJIB: Biar bisa nembak API Fonnte
+import config
+
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
@@ -34,7 +39,7 @@ app.register_blueprint(transaksi_bp, url_prefix="/api/transaksi")
 app.register_blueprint(laporan_bp,   url_prefix="/api/laporan")
 app.register_blueprint(addon_bp,     url_prefix="/api/addon")
 app.register_blueprint(user_bp,      url_prefix="/api/user")
-app.register_blueprint(report_bp,    url_prefix="/api/report")
+app.register_blueprint(report_bp)
 
 @app.route("/api/health")
 def health():
@@ -42,3 +47,4 @@ def health():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000, host="0.0.0.0")
+    

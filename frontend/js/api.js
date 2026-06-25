@@ -35,11 +35,12 @@ var api = {
     delete: function(id)    { return api.delete('/pelanggan/'+id); },
   },
   layanan: {
-    all:    function()      { return api.get('/layanan/'); },
-    jenis:  function()      { return api.get('/layanan/jenis'); },
-    create: function(d)     { return api.post('/layanan/', d); },
-    update: function(id,d)  { return api.put('/layanan/'+id, d); },
-    delete: function(id)    { return api.delete('/layanan/'+id); },
+    all:         function()      { return api.get('/layanan/'); },
+    jenis:       function()      { return api.get('/layanan/jenis'); },
+    create:      function(d)     { return api.post('/layanan/', d); },
+    createJenis: function(d)     { return api.post('/layanan/jenis', d); }, // 👈 INI TAMBAHANNYA
+    update:      function(id,d)  { return api.put('/layanan/'+id, d); },
+    delete:      function(id)    { return api.delete('/layanan/'+id); }, // (Biarkan aja di API buat jaga-jaga)
   },
   transaksi: {
     all: function(p) {
@@ -64,7 +65,12 @@ var api = {
     },
     kirimEmail:     function(d) { return api.post('/send-report', d); }, // 🌟 BARU: Untuk kirim email laporan
   },
-  addon: { all: function() { return api.get('/addon/'); } },
+  addon: {
+    all:    function()      { return api.get('/addon/'); },
+    create: function(d)     { return api.post('/addon/', d); },
+    update: function(id, d) { return api.put('/addon/'+id, d); },
+    delete: function(id)    { return api.delete('/addon/'+id); }
+  },
   user: {
     all:         function()      { return api.get('/user/'); },
     create:      function(d)     { return api.post('/user/', d); },
@@ -133,3 +139,4 @@ async function doLogout() {
   sessionStorage.removeItem('currentUser');
   window.location.href = '../index.html';
 }
+

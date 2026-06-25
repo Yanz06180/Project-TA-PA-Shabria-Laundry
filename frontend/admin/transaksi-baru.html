@@ -42,6 +42,25 @@
 
     .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 14px; }
     .summary-row:last-child { border-bottom: none; }
+
+    /* 🖨️ CSS KHUSUS PRINT STRUK 58mm THERMAL */
+    @media print {
+      body * { visibility: hidden !important; }
+      #app { display: none !important; }
+      #toast-container { display: none !important; }
+      
+      #printArea, #printArea * { visibility: visible !important; }
+      #printArea {
+        display: block !important;
+        position: absolute; left: 0; top: 0;
+        width: 58mm; /* Lebar kertas kasir */
+        margin: 0; padding: 2mm;
+        font-family: 'Courier New', Courier, monospace; /* Font kasir banget */
+        font-size: 11px; color: black;
+        line-height: 1.2;
+      }
+      @page { margin: 0; }
+    }
   </style>
 </head>
 <body>
@@ -56,7 +75,6 @@
       <main style="flex:1; overflow-y:auto; scrollbar-width:none;">
         <div class="page-inner">
 
-          <!-- Back + Title -->
           <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
             <a href="transaksi.html" style="width:38px; height:38px; border-radius:10px; background:#EFF6FF; border:1.5px solid #BFDBFE; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:18px;">←</a>
             <div>
@@ -65,10 +83,8 @@
             </div>
           </div>
 
-          <!-- Step indicator -->
           <div class="step-header" id="stepIndicator" style="margin-bottom:28px;"></div>
 
-          <!-- Step 0: Pilih Customer -->
           <div class="step-panel active" id="step0">
             <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:14px;">Pilih Customer</h2>
             <div class="search-bar" style="margin-bottom:16px;">
@@ -81,14 +97,9 @@
             </div>
           </div>
 
-          <!-- Step 1: Pilih Layanan -->
           <div class="step-panel" id="step1">
             <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:14px;">Pilih Layanan</h2>
 
-            <!-- Type toggle -->
-            
-
-            <!-- Sub-category pills -->
             <div style="margin-bottom:16px;">
               <label style="font-size:13px; font-weight:700; color:#374151; display:block; margin-bottom:8px;">Pilih Katalog Layanan:</label>
               <select id="catDropdown" onchange="setJenis(Number(this.value))" 
@@ -96,10 +107,8 @@
               </select>
             </div>
 
-            <!-- Layanan list -->
             <div id="layananOptions" style="margin-bottom:16px;"></div>
 
-            <!-- Qty / Berat input -->
             <div id="qtySection" style="display:none; background:white; border-radius:18px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border:1.5px solid #BFDBFE; margin-bottom:12px;">
               <p id="qtyLabel" style="font-size:14px; font-weight:700; color:#374151; margin-bottom:16px;">Estimasi Berat</p>
               <div class="qty-control" style="justify-content:center; margin-bottom:16px;">
@@ -114,11 +123,9 @@
                 style="width:100%; resize:none; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:12px; padding:10px 14px; font-size:13px; outline:none;"></textarea>
             </div>
 
-            <!-- Cart -->
             <div id="cartSection" style="display:none;"></div>
           </div>
 
-          <!-- Step 2: Tambahan & Antar Jemput -->
           <div class="step-panel" id="step2">
             <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:12px; padding:12px 16px; display:flex; gap:10px; align-items:flex-start; margin-bottom:20px;">
               <span>💡</span>
@@ -132,7 +139,6 @@
             <div id="extraSummary" style="display:none; background:#F8FAFF; border:1.5px solid #BFDBFE; border-radius:16px; padding:14px 16px; margin-top:16px;"></div>
           </div>
 
-          <!-- Step 3: Pembayaran -->
           <div class="step-panel" id="step3">
             <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:16px;">Pilih Metode Pembayaran</h2>
             <div id="payOptions" style="margin-bottom:20px;"></div>
@@ -142,19 +148,15 @@
             </div>
           </div>
 
-          <!-- Step 4: Success -->
           <div class="step-panel" id="step4" style="text-align:center; padding:40px 20px;">
             <div style="width:90px; height:90px; border-radius:50%; background:#DCFCE7; display:flex; align-items:center; justify-content:center; font-size:50px; margin:0 auto 20px;">✅</div>
             <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:8px;">Transaksi Berhasil!</h2>
             <p style="font-size:14px; color:#6B7280; margin-bottom:24px;">Data transaksi telah disimpan</p>
             <div id="successCard" class="card" style="text-align:left; max-width:480px; margin:0 auto 24px;"></div>
-            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-              <a href="transaksi.html" class="btn btn-primary">Lihat Daftar Transaksi</a>
-              <a href="dashboard.html" class="btn btn-ghost">Kembali ke Dashboard</a>
-            </div>
+            
+            <div id="successActions" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;"></div>
           </div>
 
-          <!-- Nav buttons -->
           <div id="navBtns" style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid #E5E7EB;">
             <button onclick="prevStep()" id="btnBack" style="display:none;" class="btn btn-ghost">← Kembali</button>
             <button onclick="nextStep()" id="btnNext" class="btn btn-primary" disabled>Lanjut →</button>
@@ -164,6 +166,20 @@
     </div>
   </div>
 
+  <div id="printArea" style="display:none;"></div>
+  <div class="modal-overlay" id="modalPreviewStruk" style="z-index:9999;">
+    <div style="background:#F3F4F6; padding:20px; border-radius:16px; display:flex; flex-direction:column; align-items:center; max-height:90vh;">
+      <h3 style="font-size:16px; font-weight:800; margin-bottom:16px; color:#111827;">Preview Struk (58mm)</h3>
+      
+      <div id="strukLayar" style="width: 58mm; background: white; padding: 4mm; font-family: 'Courier New', Courier, monospace; font-size: 11px; color: black; line-height: 1.2; text-align: left; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow-y:auto; max-height:60vh;">
+      </div>
+
+      <div style="margin-top:20px; display:flex; gap:12px;">
+         <button onclick="document.getElementById('modalPreviewStruk').classList.remove('show')" class="btn btn-ghost">Tutup</button>
+         <button onclick="window.print()" class="btn btn-primary" style="background:#111827;">🖨️ Print Fisik</button>
+      </div>
+    </div>
+  </div>
   <div id="toast-container"></div>
 
   <script src="../js/api.js"></script>
@@ -178,39 +194,39 @@
     let currentUser   = null;
 
     let selectedCustomer  = null;
-    let cart              = [];          // [{layananId, nama, harga, qty, isKiloan, catatan}]
+    let cart              = [];          
     let selectedTambahan  = {};
     let selectedAntar     = new Set();
     let metodePembayaran  = null;
-    let pendingLayanan    = null;        // layanan yg sedang dikonfigurasi
+    let pendingLayanan    = null;        
     let pendingQty        = 1;
     let jenisBarangAll = [];
-    let activeJenisId  = null; // Menyimpan ID katalog yang lagi dipilih
-
-    
+    let activeJenisId  = null; 
 
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', async () => {
-      currentUser = await requireAuth(['admin']);
+      currentUser = await requireAuth(['admin', 'manager', 'owner']);
       initAdminLayout(currentUser, 'transaksi');
       updateStepUI();
 
-      // Fetch semua data dari API lu
-      const resJenis = await fetch('http://127.0.0.1:5000/api/layanan/jenis');
-      jenisBarangAll = await resJenis.json();
+      try {
+        const resJenis = await fetch('http://127.0.0.1:5000/api/layanan/jenis');
+        jenisBarangAll = await resJenis.json();
 
-      [customers, layananAll, addons] = await Promise.all([
-        api.pelanggan.all(),
-        api.layanan.all(),
-        api.addon.all(),
-      ]);
+        [customers, layananAll, addons] = await Promise.all([
+          api.pelanggan.all(),
+          api.layanan.all(),
+          api.addon.all(),
+        ]);
 
-      // Set katalog pertama sebagai yang aktif secara default
-      if (jenisBarangAll.length > 0) activeJenisId = jenisBarangAll[0].id_jenis_barang;
+        if (jenisBarangAll.length > 0) activeJenisId = jenisBarangAll[0].id_jenis_barang;
 
-      renderCustomerOptions(customers);
-      renderAddons();
-      renderPayOptions();
+        renderCustomerOptions(customers);
+        renderAddons();
+        renderPayOptions();
+      } catch (e) {
+        showToast('Gagal memuat data dari server', 'error');
+      }
     });
 
     /* ── Step navigation ── */
@@ -275,29 +291,27 @@
 
     /* ── Step 0: Customer ── */
     function renderCustomerOptions(list) {
-  const container = document.getElementById('customerOptions');
-  
-  // Kasih validasi kalau datanya kosong
-  if (!list || list.length === 0) {
-    container.innerHTML = `<p style="text-align:center; color:#EF4444; padding:30px 0; font-weight:700;">🤷‍♂️ Customer tidak ditemukan.</p>`;
-    return;
-  }
+      const container = document.getElementById('customerOptions');
+      if (!list || list.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:#EF4444; padding:30px 0; font-weight:700;">🤷‍♂️ Customer tidak ditemukan.</p>`;
+        return;
+      }
 
-  container.innerHTML = list.map(c => {
-    const nama = `${c.pel_first_name} ${c.pel_last_name}`.trim();
-    const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-    const isSel = selectedCustomer?.id_pelanggan === c.id_pelanggan;
-    return `
-      <button class="customer-option ${isSel?'selected':''}" onclick="selectCustomer(${c.id_pelanggan})">
-        <div style="width:46px; height:46px; border-radius:14px; background:${isSel?'#1565C0':'#F3F4F6'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:${isSel?'white':'#6B7280'}; flex-shrink:0;">${initials}</div>
-        <div style="flex:1; text-align:left;">
-          <p style="font-size:14px; font-weight:700; color:#111827;">${nama}</p>
-          <p style="font-size:12px; color:#9CA3AF;">${c.pel_no_telepon}</p>
-        </div>
-        <div class="check-circle ${isSel?'checked':''}">${isSel?'✓':''}</div>
-      </button>`;
-  }).join('');
-}
+      container.innerHTML = list.map(c => {
+        const nama = `${c.pel_first_name} ${c.pel_last_name}`.trim();
+        const initials = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        const isSel = selectedCustomer?.id_pelanggan === c.id_pelanggan;
+        return `
+          <button class="customer-option ${isSel?'selected':''}" onclick="selectCustomer(${c.id_pelanggan})">
+            <div style="width:46px; height:46px; border-radius:14px; background:${isSel?'#1565C0':'#F3F4F6'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:${isSel?'white':'#6B7280'}; flex-shrink:0;">${initials}</div>
+            <div style="flex:1; text-align:left;">
+              <p style="font-size:14px; font-weight:700; color:#111827;">${nama}</p>
+              <p style="font-size:12px; color:#9CA3AF;">${c.pel_no_telepon}</p>
+            </div>
+            <div class="check-circle ${isSel?'checked':''}">${isSel?'✓':''}</div>
+          </button>`;
+      }).join('');
+    }
 
     function filterCustomerOptions() {
       const q = document.getElementById('customerSearch').value.toLowerCase();
@@ -321,21 +335,17 @@
     }
 
     function renderLayananOptions() {
-      // 1. Render tombol katalog (dinamis dari tabel jenis_barang)
-      // 1. Render isi dropdown katalog (kalau masih kosong)
       const catDropdown = document.getElementById('catDropdown');
       if (catDropdown.innerHTML.trim() === '') {
         catDropdown.innerHTML = jenisBarangAll.map(j => `
           <option value="${j.id_jenis_barang}">${j.jenis_nama}</option>
         `).join('');
       }
-      // Set dropdown sesuai katalog yang lagi aktif
       catDropdown.value = activeJenisId;
 
-      // 2. Filter layanan yang id_jenis_barang-nya cocok sama katalog yang dipilih
-      const visible = layananAll.filter(l => l.id_jenis_barang === activeJenisId);
+      // Filter layanan (ambil yang aktif = 1 atau true saja)
+      const visible = layananAll.filter(l => l.id_jenis_barang === activeJenisId && (l.aktif === 1 || l.aktif === true || l.aktif === undefined));
 
-      // 3. Render kartu layanannya
       document.getElementById('layananOptions').innerHTML = visible.map(l => {
         const isSel = pendingLayanan?.id_layanan === l.id_layanan;
         return `
@@ -355,12 +365,6 @@
       updateQtySection();
       renderCart();
       validateStep();
-    }
-
-    function setSubKat(sub) {
-      subKategori = sub;
-      pendingLayanan = null;
-      renderLayananOptions();
     }
 
     function selectLayanan(id) {
@@ -447,11 +451,12 @@
 
     /* ── Step 2: Tambahan ── */
     function renderAddons() {
-      // Filter udah gw perbaiki biar nangkep bahasa Indo ("antar", "jemput")
-      const tambahan = addons.filter(a => !a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
-      const antarJemput = addons.filter(a => a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
+      // Filter yang aktif saja
+      const activeAddons = addons.filter(a => a.aktif === 1 || a.aktif === true || a.aktif === undefined);
+      
+      const tambahan = activeAddons.filter(a => !a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
+      const antarJemput = activeAddons.filter(a => a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
 
-      // UI Tambahan (Sekarang pakai tombol - dan +)
       document.getElementById('tambahanOptions').innerHTML = tambahan.map(a => {
         const qty = selectedTambahan[a.id_add_on] || 0;
         const isSel = qty > 0;
@@ -470,7 +475,6 @@
           </div>`;
       }).join('');
 
-      // UI Antar Jemput (Tetap dicentang karena 1x jalan)
       document.getElementById('antarJemputOptions').innerHTML = antarJemput.map(a => {
         const isSel = selectedAntar.has(a.id_add_on);
         return `
@@ -492,7 +496,6 @@
       if (next < 0) next = 0;
       if (next === 0) delete selectedTambahan[id];
       else selectedTambahan[id] = next;
-      
       renderAddons();
       updateExtraSummary();
     }
@@ -501,29 +504,6 @@
       if (selectedAntar.has(id)) selectedAntar.delete(id);
       else selectedAntar.add(id);
       renderAddons();
-      updateExtraSummary();
-    }
-
-    function toggleAddon(type, id) {
-      const set  = type === 'tambahan' ? selectedTambahan : selectedAntar;
-      const pfx  = type === 'tambahan' ? 't' : 'a';
-      const btn  = document.getElementById(`addon_${pfx}_${id}`);
-      const chk  = document.getElementById(`addonCheck_${pfx}_${id}`);
-      if (set.has(id)) {
-        set.delete(id);
-        btn.style.border = '1.5px solid #F3F4F6';
-        btn.style.background = 'white';
-        chk.style.background = 'transparent';
-        chk.style.border     = '2px solid #D1D5DB';
-        chk.textContent = '';
-      } else {
-        set.add(id);
-        btn.style.border = type==='tambahan' ? '2px solid #1565C0' : '2px solid #7C3AED';
-        btn.style.background = type==='tambahan' ? '#EFF6FF' : '#F5F3FF';
-        chk.style.background = type==='tambahan' ? '#1565C0' : '#7C3AED';
-        chk.style.border     = 'none';
-        chk.innerHTML        = '<span style="color:white; font-size:13px;">✓</span>';
-      }
       updateExtraSummary();
     }
 
@@ -623,7 +603,6 @@
       try {
         const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
         
-        // --- INI YANG BIKIN ERROR KEMAREN UDAH GW FIX ---
         const selT = Object.keys(selectedTambahan).map(id => {
           const a = addons.find(x => x.id_add_on == id);
           return { ...a, qty: selectedTambahan[id] };
@@ -635,7 +614,6 @@
                          + selA.reduce((s,a) => s + a.tambahan_harga, 0);
                          
         const grandTotal = cart.reduce((s,i) => s + i.subTotal, 0) + extraTotal;
-        // ------------------------------------------------
 
         const result = await api.transaksi.create({
           id_pelanggan:     selectedCustomer.id_pelanggan,
@@ -656,11 +634,23 @@
           })),
         });
 
+        // Simpan data global buat dicetak / di WA
+        window.lastTrxData = {
+          id: result.id_transaksi,
+          customer: selectedCustomer,
+          cart: cart,
+          selT: selT,
+          selA: selA,
+          total: grandTotal,
+          metode: metodePembayaran
+        };
+
         /* Success screen */
         currentStep = TOTAL_STEPS;
         document.getElementById('navBtns').style.display = 'none';
         document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
         document.getElementById('step4').classList.add('active');
+        
         document.getElementById('successCard').innerHTML = `
           <div style="padding:16px 20px;">
             ${[
@@ -672,9 +662,158 @@
               <div class="summary-row"><span style="color:#9CA3AF; font-size:13px;">${k}</span>
               <strong style="font-size:13px;">${v}</strong></div>`).join('')}
           </div>`;
+
+        // Render tombol cetak dan WA
+        let waButtonHtml = '';
+        if (selA.length > 0) {
+          waButtonHtml = `<button onclick="kirimWA()" style="background:#25D366; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">📱 Kirim Resi ke WhatsApp</button>`;
+        }
+
+        document.getElementById('successActions').innerHTML = `
+          <button onclick="cetakStruk()" style="background:#111827; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🖨️ Cetak Struk</button>
+          ${waButtonHtml}
+          <a href="transaksi.html" style="background:white; color:#374151; font-weight:700; border:1.5px solid #D1D5DB; padding:10px 20px; border-radius:10px; cursor:pointer; text-decoration:none;">Daftar Transaksi</a>
+        `;
+
       } catch (err) {
         showToast('Gagal menyimpan: ' + err.message, 'error');
         btn.disabled = false; btn.textContent = 'Simpan Transaksi ✓';
+      }
+    }
+
+    /* ── CETAK STRUK THERMAL ── */
+    /* ── CETAK & PREVIEW STRUK THERMAL ── */
+    function cetakStruk() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      const date = new Date().toLocaleString('id-ID');
+      
+      let itemsHtml = d.cart.map(i => `
+        <div style="display:flex; justify-content:space-between;">
+          <span>${i.nama}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>${i.qty}x @${formatRupiah(i.harga)}</span>
+          <span>${formatRupiah(i.subTotal)}</span>
+        </div>
+      `).join('');
+
+      d.selT.forEach(a => {
+        itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>${a.qty}x ${a.add_nama}</span><span>${formatRupiah(a.tambahan_harga * a.qty)}</span></div>`;
+      });
+      d.selA.forEach(a => {
+        itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>${a.add_nama}</span><span>${formatRupiah(a.tambahan_harga)}</span></div>`;
+      });
+
+      const html = `
+        <div style="text-align:center; margin-bottom:10px;">
+          <h2 style="margin:0; font-size:16px;">SHABRIA LAUNDRY</h2>
+          <p style="margin:0; font-size:10px;">Jl. Raya Salatiga No. 123</p>
+          <p style="margin:0; font-size:10px;">Telp: 08123456789</p>
+          <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <p style="margin:0;">No   : ${d.id}</p>
+          <p style="margin:0;">Tgl  : ${date}</p>
+          <p style="margin:0;">Cust : ${d.customer.pel_first_name} ${d.customer.pel_last_name}</p>
+          <p style="margin:0;">Kasir: ${currentUser.nama}</p>
+          <p style="margin:0;">Status: <b>ANTREAN</b></p>
+        </div>
+        <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
+        ${itemsHtml}
+        <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
+        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px;">
+          <span>TOTAL</span>
+          <span>${formatRupiah(d.total)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Metode</span>
+          <span>${d.metode}</span>
+        </div>
+        <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
+        <div style="text-align:center; font-size:10px; margin-top:10px;">
+          <p style="margin:0;">Terima kasih atas</p>
+          <p style="margin:0;">kepercayaan Anda!</p>
+          <p style="margin:5px 0 0 0;">Cucian bersih, hati tenang.</p>
+        </div>
+      `;
+      
+      // 1. Masukin data ke div print tersembunyi (Buat diprint beneran)
+      document.getElementById('printArea').innerHTML = html;
+      
+      // 2. Masukin data ke simulasi layar HP/Laptop (Buat preview)
+      document.getElementById('strukLayar').innerHTML = html;
+      
+      // 3. Tampilkan Pop-up Preview
+      document.getElementById('modalPreviewStruk').classList.add('show');
+    }
+    /* ── KIRIM WA ANTAR JEMPUT ── */
+    /* ── KIRIM WA ANTAR JEMPUT (VIA API TOKEN BACKGROUND) ── */
+    async function kirimWA() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      
+      let phone = d.customer.pel_no_telepon || '';
+      // Ubah awalan 0 jadi 62 buat standar API internasional
+      if(phone.startsWith('0')) phone = '62' + phone.substring(1);
+      if(!phone) {
+        showToast('Customer tidak memiliki nomor telepon', 'error');
+        return;
+      }
+      
+      let itemText = d.cart.map(i => `- ${i.nama} (${i.qty}x)`).join('\n');
+      
+      const text = `*SHABRIA LAUNDRY*\n\n`
+        + `Halo Kak *${d.customer.pel_first_name}*,\n`
+        + `Terima kasih telah mempercayakan laundry pakaian Anda kepada kami.\n\n`
+        + `*Detail Pesanan:*\n`
+        + `No Nota: ${d.id}\n`
+        + `Layanan:\n${itemText}\n\n`
+        + `*Total Bayar:* ${formatRupiah(d.total)}\n`
+        + `*Status:* Dalam Antrean (Antar Jemput)\n\n`
+        + `Tim kami akan segera memproses pakaian Anda. Pantau terus statusnya ya! 🙏`;
+        
+      // ⚠️ GANTI 2 BARIS INI SESUAI VENDOR API WA LU ⚠️
+      const WA_API_URL = "https://api.fonnte.com/send"; // Contoh kalau pakai Fonnte
+      const WA_TOKEN   = "J3AHPsxHJE2duqmPT8oT"; 
+
+      // Bikin tombolnya loading biar kasir nggak spam klik
+      const btn = document.querySelector('button[onclick="kirimWA()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '⏳ Mengirim WA...';
+      btn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('target', phone);
+        formData.append('message', text);
+
+        const response = await fetch(WA_API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': WA_TOKEN // Kadang butuh 'Bearer TOKEN', sesuaikan dokumentasi vendor lu
+          },
+          body: formData
+        });
+
+        const res = await response.json();
+
+        // Cek response dari API (Tiap vendor beda-beda, ini standar Fonnte)
+        if (res.status === true || res.status === 'success') {
+          showToast('✅ Struk berhasil dikirim via WhatsApp!', 'success');
+          // Opsional: Ilangin tombolnya kalau udah sukses terkirim biar nggak dobel
+          btn.style.display = 'none';
+        } else {
+          showToast('Gagal ngirim WA: ' + (res.reason || res.message || 'Cek Token/Kuota WA lu'), 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal terhubung ke API WhatsApp', 'error');
+      } finally {
+        if (btn) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
       }
     }
   </script>

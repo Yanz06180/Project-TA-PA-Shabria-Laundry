@@ -3,28 +3,34 @@ from db import query, execute
 
 addon_bp = Blueprint("addon", __name__)
 
-# Mengambil semua add-on yang masih aktif
+# Mengambil SEMUA add-on (termasuk yang nonaktif biar manager bisa nyalain lagi)
 @addon_bp.route("/", methods=["GET"])
 def get_all():
-    return jsonify(query("SELECT * FROM add_on WHERE aktif=1 ORDER BY id_add_on"))
+    return jsonify(query("SELECT * FROM add_on ORDER BY id_add_on"))
 
 # Menambah add-on / antar jemput baru
 @addon_bp.route("/", methods=["POST"])
 def create():
     d = request.get_json()
+    kategori = d.get("kategori", "Add-on")
+    aktif = d.get("aktif", True)
+    
     execute(
-        "INSERT INTO add_on (add_nama, tambahan_harga, aktif) VALUES (%s, %s, 1)",
-        (d["add_nama"], d["tambahan_harga"])
+        "INSERT INTO add_on (add_nama, tambahan_harga, kategori, aktif) VALUES (%s, %s, %s, %s)",
+        (d["add_nama"], d["tambahan_harga"], kategori, aktif)
     )
     return jsonify({"message": "Add-on berhasil ditambahkan"}), 201
 
-# Mengedit add-on
+# Mengedit add-on (termasuk status aktif & kategorinya)
 @addon_bp.route("/<int:id>", methods=["PUT"])
 def update(id):
     d = request.get_json()
+    kategori = d.get("kategori", "Add-on")
+    aktif = d.get("aktif", True)
+    
     execute(
-        "UPDATE add_on SET add_nama=%s, tambahan_harga=%s WHERE id_add_on=%s",
-        (d["add_nama"], d["tambahan_harga"], id)
+        "UPDATE add_on SET add_nama=%s, tambahan_harga=%s, kategori=%s, aktif=%s WHERE id_add_on=%s",
+        (d["add_nama"], d["tambahan_harga"], kategori, aktif, id)
     )
     return jsonify({"message": "Add-on berhasil diupdate"})
 

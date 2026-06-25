@@ -15,17 +15,18 @@
 
 const ADMIN_NAV = [
   { href:'dashboard.html',  icon:'📊', label:'Dashboard'       },
-  { href:'customer.html',  icon:'👥', label:'Customer'         },
+  { href:'customer.html',   icon:'👥', label:'Customer'         },
   { href:'transaksi.html',  icon:'🧾', label:'Transaksi'        },
-  { href:'laporan.html',    icon:'📈', label:'Laporan'          },
-  { href:'layanan.html',    icon:'⚙️',  label:'Kelola Layanan'  },
+  { href:'laporan.html',    icon:'📈', label:'Laporan'          }
+  // ❌ 'Kelola Layanan' dihapus dari sini biar Kasir gak bisa iseng ngubah harga
 ];
 
 const MANAGER_NAV = [
-  { href:'dashboard.html',    icon:'📊', label:'Dashboard'           },
-  { href:'monitor.html',      icon:'📋', label:'Monitor Transaksi'   },
-  { href:'laporan.html',      icon:'📈', label:'Laporan'             },
-  { href:'akun-admin.html',   icon:'👤', label:'Akun Admin'          },
+  { href:'dashboard.html',      icon:'📊', label:'Dashboard'           },
+  { href:'monitor.html',        icon:'📋', label:'Monitor Transaksi'   },
+  { href:'laporan.html',        icon:'📈', label:'Laporan'             },
+  { href:'kelola-layanan.html', icon:'✨', label:'Kelola Layanan'      }, // ✅ Ditambah ke sini
+  { href:'akun-admin.html',     icon:'👤', label:'Akun Admin'          }
 ];
 
 function _sidebarHTML(navItems, user, accent, accentLight, roleLabel) {
