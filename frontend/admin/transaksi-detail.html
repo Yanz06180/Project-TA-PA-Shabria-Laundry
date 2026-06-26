@@ -10,63 +10,83 @@
     .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
     .detail-row:last-child { border-bottom: none; }
+    
+    /* Tambahan efek sticky buat judul biar nempel di atas */
+    .sticky-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: -28px; /* Mengimbangi padding atas dari page-inner */
+      background: #F0F7FF; /* Harus sama kayak background body */
+      padding: 28px 0 16px 0; /* Biar rapi pas di-scroll */
+      margin-bottom: 24px;
+      z-index: 10;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
   </style>
 </head>
-<body>
-  <div id="app" style="display:flex; height:100vh; background:#F0F7FF;">
-    <div id="sidebar" class="desktop-sidebar"></div>
-    <div style="flex:1; display:flex; flex-direction:column; overflow:y-auto;">
-      <header id="topHeader"></header>
-      <main class="page-inner">
-        
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
-          <a href="transaksi.html" style="text-decoration:none; font-size:24px;">←</a>
-          <h1 style="font-size:22px; font-weight:900;">Detail Transaksi: <span id="trxIdDisplay">Memuat...</span></h1>
-        </div>
-
-        <div id="contentLoading">Memuat data transaksi...</div>
-        
-        <div id="contentDetail" style="display:none;">
-          <div class="card">
-            <h2 style="font-size:16px; margin-bottom:12px;">Informasi Pelanggan</h2>
-            <div class="detail-row"><span>Nama</span> <strong id="pelNama"></strong></div>
-            <div class="detail-row"><span>No. Telepon</span> <strong id="pelTelp"></strong></div>
-            <div class="detail-row"><span>Alamat</span> <strong id="pelAlamat"></strong></div>
+<body style="margin: 0; overflow: hidden; height: 100vh;">
+  <div id="app" style="display:flex; height:100vh; background:#F0F7FF; overflow:hidden;">
+    
+    <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0; height: 100vh; overflow-y: auto;"></div>
+    
+    <div style="flex:1; display:flex; flex-direction:column; height: 100vh;">
+      
+      <header id="topHeader" style="flex-shrink:0;"></header>
+      
+      <div style="flex:1; overflow-y:auto; overflow-x:hidden;">
+        <main class="page-inner">
+          
+          <div class="sticky-header">
+            <a href="transaksi.html" style="text-decoration:none; font-size:24px;">←</a>
+            <h1 style="font-size:22px; font-weight:900; margin:0;">Detail Transaksi: <span id="trxIdDisplay">Memuat...</span></h1>
           </div>
 
-          <div class="card" id="statusCard">
-            <h2 style="font-size:16px; margin-bottom:12px;">Update Status Pengerjaan</h2>
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-              <select id="statusSelect" style="padding:10px 14px; border-radius:8px; border:1.5px solid #BFDBFE; font-size:14px; outline:none; flex:1; min-width:200px;">
-                <option value="Antrean">🕐 Antrean</option>
-                <option value="Dicuci">🫧 Dicuci</option>
-                <option value="Disetrika">🔥 Disetrika</option>
-                <option value="Siap">🛍️ Siap</option>
-                <option value="Selesai">✅ Selesai</option>
-                <option value="Dibatalkan">❌ Dibatalkan</option>
-              </select>
-              <button id="btnUpdateStatus" onclick="updateStatus()" class="btn btn-primary" style="padding:10px 20px;">Simpan Status</button>
+          <div id="contentLoading">Memuat data transaksi...</div>
+          
+          <div id="contentDetail" style="display:none;">
+            <div class="card">
+              <h2 style="font-size:16px; margin-bottom:12px;">Informasi Pelanggan</h2>
+              <div class="detail-row"><span>Nama</span> <strong id="pelNama"></strong></div>
+              <div class="detail-row"><span>No. Telepon</span> <strong id="pelTelp"></strong></div>
+              <div class="detail-row"><span>Alamat</span> <strong id="pelAlamat"></strong></div>
             </div>
-            <p id="statusLockMsg" style="display:none; color:#10B981; font-size:13px; font-weight:700; margin-top:10px;">
-              🔒 Transaksi ini sudah selesai dan tidak dapat diubah lagi.
-            </p>
+
+            <div class="card" id="statusCard">
+              <h2 style="font-size:16px; margin-bottom:12px;">Update Status Pengerjaan</h2>
+              <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <select id="statusSelect" style="padding:10px 14px; border-radius:8px; border:1.5px solid #BFDBFE; font-size:14px; outline:none; flex:1; min-width:200px;">
+                  <option value="Antrean">🕐 Antrean</option>
+                  <option value="Dicuci">🫧 Dicuci</option>
+                  <option value="Disetrika">🔥 Disetrika</option>
+                  <option value="Siap">🛍️ Siap</option>
+                  <option value="Selesai">✅ Selesai</option>
+                  <option value="Dibatalkan">❌ Dibatalkan</option>
+                </select>
+                <button id="btnUpdateStatus" onclick="updateStatus()" class="btn btn-primary" style="padding:10px 20px;">Simpan Status</button>
+              </div>
+              <p id="statusLockMsg" style="display:none; color:#10B981; font-size:13px; font-weight:700; margin-top:10px;">
+                🔒 Transaksi ini sudah selesai dan tidak dapat diubah lagi.
+              </p>
+            </div>
+
+            <div class="card">
+              <h2 style="font-size:16px; margin-bottom:12px;">Ringkasan Pembayaran</h2>
+              <div class="detail-row"><span>Kasir</span> <strong id="kasirNama"></strong></div>
+              <div class="detail-row"><span>Metode</span> <strong id="mtdBayar"></strong></div>
+              <div class="detail-row"><span>Status Bayar</span> <strong id="statusBayar"></strong></div>
+              <div class="detail-row" style="font-size:18px;"><span>Total</span> <strong id="totalBayar" style="color:#1565C0;"></strong></div>
+            </div>
+
+            <div class="card">
+              <h2 style="font-size:16px; margin-bottom:12px;">Item Layanan</h2>
+              <div id="layananList"></div>
+            </div>
           </div>
 
-          <div class="card">
-            <h2 style="font-size:16px; margin-bottom:12px;">Ringkasan Pembayaran</h2>
-            <div class="detail-row"><span>Kasir</span> <strong id="kasirNama"></strong></div>
-            <div class="detail-row"><span>Metode</span> <strong id="mtdBayar"></strong></div>
-            <div class="detail-row"><span>Status Bayar</span> <strong id="statusBayar"></strong></div>
-            <div class="detail-row" style="font-size:18px;"><span>Total</span> <strong id="totalBayar" style="color:#1565C0;"></strong></div>
-          </div>
-
-          <div class="card">
-            <h2 style="font-size:16px; margin-bottom:12px;">Item Layanan</h2>
-            <div id="layananList"></div>
-          </div>
-        </div>
-
-      </main>
+        </main>
+      </div>
     </div>
   </div>
 
@@ -77,7 +97,6 @@
       const user = await requireAuth(['admin']);
       initAdminLayout(user, 'transaksi');
       
-      // Ambil ID dari URL (misal: ?id=TRX-005)
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
       
@@ -92,16 +111,13 @@
 
     async function loadDetail(id) {
       try {
-        // Nembak ke API backend lu (pastikan api.js punya fungsi ini, atau ganti pakai fetch biasa)
         const res = await fetch(`http://127.0.0.1:5000/api/transaksi/${id}`);
         if (!res.ok) throw new Error("Data tidak ditemukan");
         const data = await res.json();
         
-        // Sembunyikan loading, tampilkan konten
         document.getElementById('contentLoading').style.display = 'none';
         document.getElementById('contentDetail').style.display = 'block';
         
-        // Isi text HTML dengan data dari database
         document.getElementById('pelNama').innerText = data.pelanggan_nama || '-';
         document.getElementById('pelTelp').innerText = data.pel_no_telepon || '-';
         document.getElementById('pelAlamat').innerText = data.pel_alamat || '-';
@@ -111,16 +127,12 @@
         document.getElementById('statusBayar').innerText = data.sudah_dibayar ? 'Lunas ✅' : 'Belum Bayar ⏳';
         document.getElementById('totalBayar').innerText = formatRupiah(data.total_bayar);
 
-        // --- LOGIKA STATUS ---
-        // Ambil status dari detail transaksi pertama
         const currentStatus = data.detail[0]?.status_pengerjaan || 'Antrean';
         const statusSelect = document.getElementById('statusSelect');
         const btnUpdate = document.getElementById('btnUpdateStatus');
         
-        // Set dropdown ke status saat ini
         statusSelect.value = currentStatus;
 
-        // Kunci dropdown kalau statusnya Selesai atau Dibatalkan
         if (currentStatus === 'Selesai' || currentStatus === 'Dibatalkan') {
           statusSelect.disabled = true;
           statusSelect.style.background = '#F3F4F6';
@@ -128,7 +140,6 @@
           document.getElementById('statusLockMsg').style.display = 'block';
         }
         
-        // Looping detail layanan
         const listHtml = data.detail.map(d => `
           <div style="background:#F9FAFB; padding:12px; border-radius:8px; margin-bottom:8px;">
             <div style="display:flex; justify-content:space-between; font-weight:bold;">
@@ -147,7 +158,6 @@
       }
     }
 
-    // Fungsi buat nembak API Update Status
     async function updateStatus() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
@@ -167,7 +177,7 @@
         if (!res.ok) throw new Error('Gagal update status dari server');
 
         alert('Status berhasil diperbarui!');
-        window.location.reload(); // Refresh halaman biar status & gemboknya ke-update
+        window.location.reload(); 
       } catch (err) {
         alert(err.message);
         btn.disabled = false;
@@ -176,4 +186,4 @@
     }
   </script>
 </body>
-</html> 
+</html>

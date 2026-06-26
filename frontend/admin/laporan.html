@@ -76,6 +76,9 @@
               <p style="font-size:13px; color:#9CA3AF; margin-top:4px;">Pemasukan otomatis · Input pengeluaran manual</p>
             </div>
             <button onclick="openModal()" class="btn btn-primary">＋ Input Pengeluaran</button>
+            <button onclick="downloadHarian()" style="background:#059669; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer;">
+              📥 Export CSV Hari Ini
+            </button>
           </div>
 
           <!-- Info banner -->
@@ -299,6 +302,25 @@
         showToast('Gagal: ' + err.message, 'error');
       } finally {
         btn.disabled = false; btn.textContent = 'Simpan Pengeluaran';
+      }
+    }
+
+    async function downloadHarian() {
+      try {
+        // Sesuaikan URL ke backend lu (misal: http://127.0.0.1:5000/api/laporan/harian/download)
+        const res = await fetch('http://127.0.0.1:5000/api/laporan/harian/download');
+        if (!res.ok) throw new Error("Gagal download laporan");
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Laporan_Harian_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        showToast('Gagal download: ' + err.message, 'error');
       }
     }
   </script>

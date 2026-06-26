@@ -1,5 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from db import query, execute
+import csv
+from io import StringIO
+from datetime import date
+
 
 laporan_bp = Blueprint("laporan", __name__)
 
@@ -63,3 +67,43 @@ def per_kategori():
            GROUP BY j.jenis_nama ORDER BY total DESC""",
         (df, dt)
     ))
+
+@laporan_bp.route("/harian/download", methods=["GET"])
+def download_laporan_harian():
+    # Perbaikan: JOIN ke tabel users untuk ambil nama kasir
+    sql = """
+        SELECT t.id_transaksi, 
+               CONCAT(p.pel_first_name, ' ', p.pel_last_name) AS nama_pelanggan, 
+               t.total_bayar, 
+               t.mtd_pembayaran, 
+               CONCAT(u.first_name, ' ', u.last_name) AS kasir_nama, 
+               t.tanggal_masuk 
+        FROM transaksi t
+        JOIN pelanggan p ON t.pelanggan_id_pelanggan = p.id_pelanggan
+        JOIN users u ON t.users_id_user = u.id_user
+        WHERE DATE(t.tanggal_masuk) = CURDATE() AND t.sudah_dibayar = 1
+        ORDER BY t.tanggal_masuk DESC
+    """
+    data = query(sql, fetchall=True)
+    
+    si = StringIO()
+    cw = csv.writer(si, delimiter=';')
+    cw.writerow(['ID Transaksi', 'Nama Pelanggan', 'Total Bayar', 'Metode Pembayaran', 'Nama Kasir', 'Waktu Transaksi'])
+    
+    for row in data:
+        cw.writerow([
+            row.get('id_transaksi', '-'),
+            row.get('nama_pelanggan', '-'),
+            row.get('total_bayar', 0),
+            row.get('mtd_pembayaran', '-'),
+            row.get('kasir_nama', '-'), # Sekarang field ini bakal ketemu!
+            row.get('tanggal_masuk', '-')
+        ])
+            
+    output = si.getvalue()
+    tanggal = date.today().strftime("%Y-%m-%d")
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename=Laporan_Harian_{tanggal}.csv"}
+    )
