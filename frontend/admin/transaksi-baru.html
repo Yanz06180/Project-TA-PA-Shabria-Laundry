@@ -53,9 +53,9 @@
       #printArea {
         display: block !important;
         position: absolute; left: 0; top: 0;
-        width: 58mm; /* Lebar kertas kasir */
+        width: 58mm; 
         margin: 0; padding: 2mm;
-        font-family: 'Courier New', Courier, monospace; /* Font kasir banget */
+        font-family: 'Courier New', Courier, monospace;
         font-size: 11px; color: black;
         line-height: 1.2;
       }
@@ -343,7 +343,6 @@
       }
       catDropdown.value = activeJenisId;
 
-      // Filter layanan (ambil yang aktif = 1 atau true saja)
       const visible = layananAll.filter(l => l.id_jenis_barang === activeJenisId && (l.aktif === 1 || l.aktif === true || l.aktif === undefined));
 
       document.getElementById('layananOptions').innerHTML = visible.map(l => {
@@ -451,7 +450,6 @@
 
     /* ── Step 2: Tambahan ── */
     function renderAddons() {
-      // Filter yang aktif saja
       const activeAddons = addons.filter(a => a.aktif === 1 || a.aktif === true || a.aktif === undefined);
       
       const tambahan = activeAddons.filter(a => !a.add_nama.toLowerCase().match(/antar|jemput|pick up|delivery/));
@@ -663,14 +661,16 @@
               <strong style="font-size:13px;">${v}</strong></div>`).join('')}
           </div>`;
 
-        // Render tombol cetak dan WA
+        // Render tombol cetak dan WA (Termasuk tombol PDF Baru)
         let waButtonHtml = '';
         if (selA.length > 0) {
-          waButtonHtml = `<button onclick="kirimWA()" style="background:#25D366; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">📱 Kirim Resi ke WhatsApp</button>`;
+          waButtonHtml = `<button onclick="kirimWA()" style="background:#25D366; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">📱 Kirim WhatsApp</button>`;
         }
 
+        // Tombol Cetak Invoice A4 dihapus dari sini sesuai request lu
         document.getElementById('successActions').innerHTML = `
-          <button onclick="cetakStruk()" style="background:#111827; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🖨️ Cetak Struk</button>
+          <button onclick="cetakLabelPDF()" style="background:#EAB308; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🏷️ Cetak Label</button>
+          <button onclick="cetakStruk()" style="background:#111827; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🖨️ Struk Kasir</button>
           ${waButtonHtml}
           <a href="transaksi.html" style="background:white; color:#374151; font-weight:700; border:1.5px solid #D1D5DB; padding:10px 20px; border-radius:10px; cursor:pointer; text-decoration:none;">Daftar Transaksi</a>
         `;
@@ -681,8 +681,56 @@
       }
     }
 
-    /* ── CETAK STRUK THERMAL ── */
-    /* ── CETAK & PREVIEW STRUK THERMAL ── */
+    /* ── FUNGSI CETAK PDF (DARI BACKEND) ── */
+   // --- JURUS SILENT PRINT (ANTI IDM) ---
+    async function printPDFLangsung(url) {
+      let iframe = document.getElementById('printIframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'printIframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      document.body.style.cursor = 'wait';
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Gagal ngambil PDF');
+        
+        const blob = await response.blob();
+        const fileUrl = URL.createObjectURL(blob);
+        
+        iframe.src = fileUrl;
+        
+        iframe.onload = function() {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+          document.body.style.cursor = 'default';
+        };
+      } catch (err) {
+        alert("Error pas mau ngeprint: " + err.message);
+        document.body.style.cursor = 'default';
+      }
+    }
+
+    // FUNGSI TOMBOL CETAK TRANSAKSI BARU
+    function cetakInvoicePDF() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      printPDFLangsung(`http://127.0.0.1:5000/api/invoice/download/${d.id}`);
+    }
+
+    function cetakLabelPDF() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      // Langsung tembak ID transaksi ke fungsi HTML
+      cetakLabelThermal(d.id); 
+    }
+    
+    // (Fungsi cetakStruk() dan kirimWA() lu biarin aja tetep kayak sebelumnya)
+
+    /* ── CETAK STRUK THERMAL (HTML) ── */
     function cetakStruk() {
       const d = window.lastTrxData;
       if(!d) return;
@@ -707,6 +755,8 @@
 
       const html = `
         <div style="text-align:center; margin-bottom:10px;">
+          <!-- INI TAMBAHAN LOGONYA -->
+          <img src="../assets/Logo.jpeg" style="width: 40mm; height: auto; margin-bottom: 8px; object-fit: contain; filter: grayscale(100%);">
           <h2 style="margin:0; font-size:16px;">SHABRIA LAUNDRY</h2>
           <p style="margin:0; font-size:10px;">Jl. Raya Salatiga No. 123</p>
           <p style="margin:0; font-size:10px;">Telp: 08123456789</p>
@@ -738,23 +788,17 @@
         </div>
       `;
       
-      // 1. Masukin data ke div print tersembunyi (Buat diprint beneran)
       document.getElementById('printArea').innerHTML = html;
-      
-      // 2. Masukin data ke simulasi layar HP/Laptop (Buat preview)
       document.getElementById('strukLayar').innerHTML = html;
-      
-      // 3. Tampilkan Pop-up Preview
       document.getElementById('modalPreviewStruk').classList.add('show');
     }
+
     /* ── KIRIM WA ANTAR JEMPUT ── */
-    /* ── KIRIM WA ANTAR JEMPUT (VIA API TOKEN BACKGROUND) ── */
     async function kirimWA() {
       const d = window.lastTrxData;
       if(!d) return;
       
       let phone = d.customer.pel_no_telepon || '';
-      // Ubah awalan 0 jadi 62 buat standar API internasional
       if(phone.startsWith('0')) phone = '62' + phone.substring(1);
       if(!phone) {
         showToast('Customer tidak memiliki nomor telepon', 'error');
@@ -769,52 +813,143 @@
         + `*Detail Pesanan:*\n`
         + `No Nota: ${d.id}\n`
         + `Layanan:\n${itemText}\n\n`
-        + `*Total Bayar:* ${formatRupiah(d.total)}\n`
-        + `*Status:* Dalam Antrean (Antar Jemput)\n\n`
-        + `Tim kami akan segera memproses pakaian Anda. Pantau terus statusnya ya! 🙏`;
+        + `*Total Bayar:* ${formatRupiah(d.total)}\n\n`
+        + `Berikut kami lampirkan Invoice detail transaksi Anda. 🙏`;
         
-      // ⚠️ GANTI 2 BARIS INI SESUAI VENDOR API WA LU ⚠️
-      const WA_API_URL = "https://api.fonnte.com/send"; // Contoh kalau pakai Fonnte
-      const WA_TOKEN   = "J3AHPsxHJE2duqmPT8oT"; 
+      const WA_API_URL = "https://api.fonnte.com/send"; 
+      const WA_TOKEN   = "J3AHPsxHJE2duqmPT8oT"; // Pake token lu
 
-      // Bikin tombolnya loading biar kasir nggak spam klik
       const btn = document.querySelector('button[onclick="kirimWA()"]');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '⏳ Mengirim WA...';
+      btn.innerHTML = '⏳ Menyiapkan & Mengirim PDF...';
       btn.disabled = true;
 
       try {
+        // 1. Tarik file PDF dari Backend
+        const pdfUrl = `http://127.0.0.1:5000/api/invoice/download/${d.id}`;
+        const pdfResponse = await fetch(pdfUrl);
+        if (!pdfResponse.ok) throw new Error("Gagal mengambil file PDF dari server");
+        
+        // 2. Dapet Blob mentah
+        const pdfBlob = await pdfResponse.blob();
+
+        // 🔥 INI KUNCI FIX-NYA: Ubah Blob jadi objek File murni dengan tipe application/pdf 🔥
+        const fileName = `Invoice_Shabria_${d.id}.pdf`;
+        const fileInvoice = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+        // 3. Bungkus ke FormData
         const formData = new FormData();
         formData.append('target', phone);
         formData.append('message', text);
+        
+        // Fonnte butuh parameter 'file' dengan tipe File yang udah jelas
+        formData.append('file', fileInvoice);
 
+        // (Opsional tapi penting buat API rewel) Kasih tau nama filenya secara eksplisit
+        formData.append('filename', fileName);
+
+        // 4. Kirim ke Fonnte
         const response = await fetch(WA_API_URL, {
           method: 'POST',
           headers: {
-            'Authorization': WA_TOKEN // Kadang butuh 'Bearer TOKEN', sesuaikan dokumentasi vendor lu
+            'Authorization': WA_TOKEN
           },
-          body: formData
+          body: formData 
         });
 
         const res = await response.json();
 
-        // Cek response dari API (Tiap vendor beda-beda, ini standar Fonnte)
         if (res.status === true || res.status === 'success') {
-          showToast('✅ Struk berhasil dikirim via WhatsApp!', 'success');
-          // Opsional: Ilangin tombolnya kalau udah sukses terkirim biar nggak dobel
-          btn.style.display = 'none';
+          showToast('✅ Pesan dan File Invoice berhasil dikirim via WA!', 'success');
+          btn.style.display = 'none'; 
         } else {
-          showToast('Gagal ngirim WA: ' + (res.reason || res.message || 'Cek Token/Kuota WA lu'), 'error');
+          showToast('Gagal ngirim WA: ' + (res.reason || res.message), 'error');
         }
       } catch (err) {
         console.error(err);
-        showToast('Gagal terhubung ke API WhatsApp', 'error');
+        showToast('Terjadi kesalahan saat kirim WA: ' + err.message, 'error');
       } finally {
         if (btn) {
           btn.innerHTML = originalText;
           btn.disabled = false;
         }
       }
+    }
+
+
+    // FUNGSI ANTI-IDM BUAT BUKA PDF
+    async function bukaPDFTanpaIDM(url) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Gagal ambil PDF dari server');
+        
+        // Ubah data jadi Blob (File Memori)
+        const blob = await response.blob();
+        // Bikin URL lokal yang nggak bisa dibajak IDM
+        const fileUrl = URL.createObjectURL(blob);
+        
+        // Buka di tab baru, IDM bakal diem aja
+        window.open(fileUrl, '_blank');
+      } catch (err) {
+        alert("Error buka PDF: " + err.message);
+      }
+    }
+
+    // --- JURUS ANTI KERTAS KOSONG (HTML KE THERMAL) ---
+    function cetakLabelThermal(idTransaksi) {
+        let iframe = document.getElementById('printLabelIframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'printLabelIframe';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+        }
+        
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        // Bikin desain HTML yang dipaksa margin 0 biar printer langsung motong
+        doc.write(`
+            <html>
+            <head>
+                <style>
+                    @page { margin: 0; } /* KUNCI UTAMA: HILANGIN MARGIN CHROME */
+                    body { 
+                        margin: 0; 
+                        padding: 4mm 2mm 0 2mm; 
+                        width: 54mm; /* Lebar aman kertas 58mm */
+                        font-family: 'Helvetica', 'Arial', sans-serif; 
+                        color: black; 
+                    }
+                    .box { 
+                        border: 2px solid black; 
+                        padding: 12px 5px; 
+                        text-align: center; 
+                    }
+                    .dashed { 
+                        border-bottom: 2px dashed black; 
+                        margin: 10px 0; 
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <h2 style="margin:0; font-size:18px; font-weight:900;">SHABRIA<br>LAUNDRY</h2>
+                    <div class="dashed"></div>
+                    <p style="margin:0; font-size:11px;">ID TRANSAKSI:</p>
+                    <h1 style="margin:6px 0; font-size:24px; font-weight:900;">${idTransaksi}</h1>
+                    <div class="dashed"></div>
+                    <p style="margin:0; font-size:11px; font-weight:bold;">Cucian Bersih,<br>Hati Tenang</p>
+                </div>
+            </body>
+            </html>
+        `);
+        doc.close();
+        
+        // Jeda dikit biar iframe kerender, trus langsung tembak print
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 250);
     }
   </script>
 </body>

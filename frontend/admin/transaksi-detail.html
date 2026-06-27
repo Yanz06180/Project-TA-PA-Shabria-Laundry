@@ -11,15 +11,14 @@
     .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
     .detail-row:last-child { border-bottom: none; }
     
-    /* Tambahan efek sticky buat judul biar nempel di atas */
     .sticky-header {
       display: flex;
       align-items: center;
       gap: 12px;
       position: sticky;
-      top: -28px; /* Mengimbangi padding atas dari page-inner */
-      background: #F0F7FF; /* Harus sama kayak background body */
-      padding: 28px 0 16px 0; /* Biar rapi pas di-scroll */
+      top: -28px;
+      background: #F0F7FF;
+      padding: 28px 0 16px 0;
       margin-bottom: 24px;
       z-index: 10;
       border-bottom: 1px solid rgba(0,0,0,0.05);
@@ -32,15 +31,21 @@
     <div id="sidebar" class="desktop-sidebar" style="flex-shrink:0; height: 100vh; overflow-y: auto;"></div>
     
     <div style="flex:1; display:flex; flex-direction:column; height: 100vh;">
-      
       <header id="topHeader" style="flex-shrink:0;"></header>
       
       <div style="flex:1; overflow-y:auto; overflow-x:hidden;">
         <main class="page-inner">
           
-          <div class="sticky-header">
-            <a href="transaksi.html" style="text-decoration:none; font-size:24px;">←</a>
-            <h1 style="font-size:22px; font-weight:900; margin:0;">Detail Transaksi: <span id="trxIdDisplay">Memuat...</span></h1>
+          <div class="sticky-header" style="justify-content: space-between;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <a href="transaksi.html" style="text-decoration:none; font-size:24px;">←</a>
+              <h1 style="font-size:22px; font-weight:900; margin:0;">Detail Transaksi: <span id="trxIdDisplay">Memuat...</span></h1>
+            </div>
+            
+            <div id="actionButtons" style="display:none; gap:10px;">
+              <button onclick="cetakInvoice()" style="background:#1565C0; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Cetak Invoice</button>
+              <button onclick="cetakLabel()" style="background:#EAB308; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">🏷️ Cetak Label</button>
+            </div>
           </div>
 
           <div id="contentLoading">Memuat data transaksi...</div>
@@ -117,6 +122,7 @@
         
         document.getElementById('contentLoading').style.display = 'none';
         document.getElementById('contentDetail').style.display = 'block';
+        document.getElementById('actionButtons').style.display = 'flex'; // Tampilkan tombol
         
         document.getElementById('pelNama').innerText = data.pelanggan_nama || '-';
         document.getElementById('pelTelp').innerText = data.pel_no_telepon || '-';
@@ -183,6 +189,132 @@
         btn.disabled = false;
         btn.innerText = 'Simpan Status';
       }
+    }
+
+    // FUNGSI API CETAK
+    // --- JURUS SILENT PRINT (ANTI IDM) ---
+    async function printPDFLangsung(url) {
+      // 1. Bikin iframe tersembunyi kalau belum ada
+      let iframe = document.getElementById('printIframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'printIframe';
+        iframe.style.display = 'none'; // Sembunyiin dari layar
+        document.body.appendChild(iframe);
+      }
+
+      // 2. Ubah kursor jadi loading biar kasir tau sistem lagi kerja
+      document.body.style.cursor = 'wait';
+
+      try {
+        // 3. Tarik PDF diam-diam pake Fetch API
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Gagal ngambil PDF dari server');
+        
+        const blob = await response.blob();
+        const fileUrl = URL.createObjectURL(blob);
+        
+        // 4. Masukin PDF ke iframe
+        iframe.src = fileUrl;
+        
+        // 5. Begitu PDF beres dimuat di iframe, langsung hajar print!
+        iframe.onload = function() {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+          document.body.style.cursor = 'default'; // Balikin kursor normal
+        };
+      } catch (err) {
+        alert("Error pas mau ngeprint: " + err.message);
+        document.body.style.cursor = 'default';
+      }
+    }
+
+    // FUNGSI TOMBOL CETAK DETAIL TRANSAKSI
+    function cetakInvoice() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const trxId = urlParams.get('id');
+      printPDFLangsung(`http://127.0.0.1:5000/api/invoice/download/${trxId}`);
+    }
+
+    function cetakLabel() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const trxId = urlParams.get('id');
+      // Ambil dari URL lalu tembak ke fungsi HTML
+      cetakLabelThermal(trxId);
+    }
+
+    // FUNGSI ANTI-IDM BUAT BUKA PDF
+    async function bukaPDFTanpaIDM(url) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Gagal ambil PDF dari server');
+        
+        // Ubah data jadi Blob (File Memori)
+        const blob = await response.blob();
+        // Bikin URL lokal yang nggak bisa dibajak IDM
+        const fileUrl = URL.createObjectURL(blob);
+        
+        // Buka di tab baru, IDM bakal diem aja
+        window.open(fileUrl, '_blank');
+      } catch (err) {
+        alert("Error buka PDF: " + err.message);
+      }
+    }
+    // --- JURUS ANTI KERTAS KOSONG (HTML KE THERMAL) ---
+    function cetakLabelThermal(idTransaksi) {
+        let iframe = document.getElementById('printLabelIframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'printLabelIframe';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+        }
+        
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        // Bikin desain HTML yang dipaksa margin 0 biar printer langsung motong
+        doc.write(`
+            <html>
+            <head>
+                <style>
+                    @page { margin: 0; } /* KUNCI UTAMA: HILANGIN MARGIN CHROME */
+                    body { 
+                        margin: 0; 
+                        padding: 4mm 2mm 0 2mm; 
+                        width: 54mm; /* Lebar aman kertas 58mm */
+                        font-family: 'Helvetica', 'Arial', sans-serif; 
+                        color: black; 
+                    }
+                    .box { 
+                        border: 2px solid black; 
+                        padding: 12px 5px; 
+                        text-align: center; 
+                    }
+                    .dashed { 
+                        border-bottom: 2px dashed black; 
+                        margin: 10px 0; 
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="box">
+                    <h2 style="margin:0; font-size:18px; font-weight:900;">SHABRIA<br>LAUNDRY</h2>
+                    <div class="dashed"></div>
+                    <p style="margin:0; font-size:11px;">ID TRANSAKSI:</p>
+                    <h1 style="margin:6px 0; font-size:24px; font-weight:900;">${idTransaksi}</h1>
+                    <div class="dashed"></div>
+                    <p style="margin:0; font-size:11px; font-weight:bold;">Cucian Bersih,<br>Hati Tenang</p>
+                </div>
+            </body>
+            </html>
+        `);
+        doc.close();
+        
+        // Jeda dikit biar iframe kerender, trus langsung tembak print
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 250);
     }
   </script>
 </body>
