@@ -43,7 +43,6 @@
     .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F3F4F6; font-size: 14px; }
     .summary-row:last-child { border-bottom: none; }
 
-    /* 🖨️ CSS KHUSUS PRINT STRUK 58mm THERMAL */
     @media print {
       body * { visibility: hidden !important; }
       #app { display: none !important; }
@@ -185,7 +184,6 @@
   <script src="../js/api.js"></script>
   <script src="../js/layout.js"></script>
   <script>
-    /* ── State ── */
     let currentStep   = 0;
     const TOTAL_STEPS = 4;
     let customers     = [];
@@ -203,7 +201,6 @@
     let jenisBarangAll = [];
     let activeJenisId  = null; 
 
-    /* ── Init ── */
     document.addEventListener('DOMContentLoaded', async () => {
       currentUser = await requireAuth(['admin', 'manager', 'owner']);
       initAdminLayout(currentUser, 'transaksi');
@@ -229,13 +226,11 @@
       }
     });
 
-    /* ── Step navigation ── */
     function updateStepUI() {
       const steps = ['Customer','Layanan','Tambahan','Pembayaran'];
       document.getElementById('stepLabel').textContent =
         `Langkah ${currentStep + 1} dari ${TOTAL_STEPS}`;
 
-      /* Indicator */
       document.getElementById('stepIndicator').innerHTML = steps.map((s, i) => `
         <div class="step-dot" style="background:${i <= currentStep ? '#1565C0':'#E5E7EB'}; color:${i <= currentStep ? 'white':'#9CA3AF'};">
           ${i < currentStep ? '✓' : i + 1}
@@ -243,13 +238,11 @@
         ${i < steps.length - 1 ? `<div class="step-line" style="background:${i < currentStep ? '#1565C0':'#E5E7EB'};"></div>` : ''}
       `).join('');
 
-      /* Panels */
       for (let i = 0; i < TOTAL_STEPS; i++) {
         const p = document.getElementById(`step${i}`);
         if (p) p.classList.toggle('active', i === currentStep);
       }
 
-      /* Buttons */
       const btnBack = document.getElementById('btnBack');
       const btnNext = document.getElementById('btnNext');
       const navBtns = document.getElementById('navBtns');
@@ -289,7 +282,6 @@
       updateStepUI();
     }
 
-    /* ── Step 0: Customer ── */
     function renderCustomerOptions(list) {
       const container = document.getElementById('customerOptions');
       if (!list || list.length === 0) {
@@ -327,7 +319,6 @@
       validateStep();
     }
 
-    /* ── Step 1: Layanan ── */
     function setJenis(id) {
       activeJenisId = id;
       pendingLayanan = null;
@@ -448,7 +439,6 @@
       validateStep();
     }
 
-    /* ── Step 2: Tambahan ── */
     function renderAddons() {
       const activeAddons = addons.filter(a => a.aktif === 1 || a.aktif === true || a.aktif === undefined);
       
@@ -534,7 +524,6 @@
         </div>`;
     }
 
-    /* ── Step 3: Pembayaran ── */
     function renderPayOptions() {
       document.getElementById('payOptions').innerHTML = [
         { value:'Cash',     icon:'💵', desc:'Pembayaran tunai di kasir' },
@@ -594,7 +583,6 @@
         </div>`;
     }
 
-    /* ── Save ── */
     async function saveTransaksi() {
       const btn = document.getElementById('btnNext');
       btn.disabled = true; btn.textContent = 'Menyimpan...';
@@ -632,7 +620,6 @@
           })),
         });
 
-        // Simpan data global buat dicetak / di WA
         window.lastTrxData = {
           id: result.id_transaksi,
           customer: selectedCustomer,
@@ -643,7 +630,6 @@
           metode: metodePembayaran
         };
 
-        /* Success screen */
         currentStep = TOTAL_STEPS;
         document.getElementById('navBtns').style.display = 'none';
         document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
@@ -661,13 +647,11 @@
               <strong style="font-size:13px;">${v}</strong></div>`).join('')}
           </div>`;
 
-        // Render tombol cetak dan WA (Termasuk tombol PDF Baru)
         let waButtonHtml = '';
         if (selA.length > 0) {
           waButtonHtml = `<button onclick="kirimWA()" style="background:#25D366; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">📱 Kirim WhatsApp</button>`;
         }
 
-        // Tombol Cetak Invoice A4 dihapus dari sini sesuai request lu
         document.getElementById('successActions').innerHTML = `
           <button onclick="cetakLabelPDF()" style="background:#EAB308; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🏷️ Cetak Label</button>
           <button onclick="cetakStruk()" style="background:#111827; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🖨️ Struk Kasir</button>
@@ -681,56 +665,6 @@
       }
     }
 
-    /* ── FUNGSI CETAK PDF (DARI BACKEND) ── */
-   // --- JURUS SILENT PRINT (ANTI IDM) ---
-    async function printPDFLangsung(url) {
-      let iframe = document.getElementById('printIframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'printIframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
-
-      document.body.style.cursor = 'wait';
-
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Gagal ngambil PDF');
-        
-        const blob = await response.blob();
-        const fileUrl = URL.createObjectURL(blob);
-        
-        iframe.src = fileUrl;
-        
-        iframe.onload = function() {
-          iframe.contentWindow.focus();
-          iframe.contentWindow.print();
-          document.body.style.cursor = 'default';
-        };
-      } catch (err) {
-        alert("Error pas mau ngeprint: " + err.message);
-        document.body.style.cursor = 'default';
-      }
-    }
-
-    // FUNGSI TOMBOL CETAK TRANSAKSI BARU
-    function cetakInvoicePDF() {
-      const d = window.lastTrxData;
-      if(!d) return;
-      printPDFLangsung(`http://127.0.0.1:5000/api/invoice/download/${d.id}`);
-    }
-
-    function cetakLabelPDF() {
-      const d = window.lastTrxData;
-      if(!d) return;
-      // Langsung tembak ID transaksi ke fungsi HTML
-      cetakLabelThermal(d.id); 
-    }
-    
-    // (Fungsi cetakStruk() dan kirimWA() lu biarin aja tetep kayak sebelumnya)
-
-    /* ── CETAK STRUK THERMAL (HTML) ── */
     function cetakStruk() {
       const d = window.lastTrxData;
       if(!d) return;
@@ -755,7 +689,6 @@
 
       const html = `
         <div style="text-align:center; margin-bottom:10px;">
-          <!-- INI TAMBAHAN LOGONYA -->
           <img src="../assets/Logo.jpeg" style="width: 40mm; height: auto; margin-bottom: 8px; object-fit: contain; filter: grayscale(100%);">
           <h2 style="margin:0; font-size:16px;">SHABRIA LAUNDRY</h2>
           <p style="margin:0; font-size:10px;">Jl. Raya Salatiga No. 123</p>
@@ -793,7 +726,6 @@
       document.getElementById('modalPreviewStruk').classList.add('show');
     }
 
-    /* ── KIRIM WA ANTAR JEMPUT ── */
     async function kirimWA() {
       const d = window.lastTrxData;
       if(!d) return;
@@ -817,38 +749,28 @@
         + `Berikut kami lampirkan Invoice detail transaksi Anda. 🙏`;
         
       const WA_API_URL = "https://api.fonnte.com/send"; 
-      const WA_TOKEN   = "J3AHPsxHJE2duqmPT8oT"; // Pake token lu
+      const WA_TOKEN   = "J3AHPsxHJE2duqmPT8oT"; 
 
       const btn = document.querySelector('button[onclick="kirimWA()"]');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '⏳ Menyiapkan & Mengirim PDF...';
+      btn.innerHTML = '⏳ Menyusun PDF & Mengirim...';
       btn.disabled = true;
 
       try {
-        // 1. Tarik file PDF dari Backend
         const pdfUrl = `http://127.0.0.1:5000/api/invoice/download/${d.id}`;
         const pdfResponse = await fetch(pdfUrl);
         if (!pdfResponse.ok) throw new Error("Gagal mengambil file PDF dari server");
         
-        // 2. Dapet Blob mentah
         const pdfBlob = await pdfResponse.blob();
-
-        // 🔥 INI KUNCI FIX-NYA: Ubah Blob jadi objek File murni dengan tipe application/pdf 🔥
         const fileName = `Invoice_Shabria_${d.id}.pdf`;
         const fileInvoice = new File([pdfBlob], fileName, { type: "application/pdf" });
 
-        // 3. Bungkus ke FormData
         const formData = new FormData();
         formData.append('target', phone);
         formData.append('message', text);
-        
-        // Fonnte butuh parameter 'file' dengan tipe File yang udah jelas
         formData.append('file', fileInvoice);
-
-        // (Opsional tapi penting buat API rewel) Kasih tau nama filenya secara eksplisit
         formData.append('filename', fileName);
 
-        // 4. Kirim ke Fonnte
         const response = await fetch(WA_API_URL, {
           method: 'POST',
           headers: {
@@ -876,26 +798,42 @@
       }
     }
 
-
-    // FUNGSI ANTI-IDM BUAT BUKA PDF
-    async function bukaPDFTanpaIDM(url) {
+    async function printPDFLangsung(url) {
+      let iframe = document.getElementById('printIframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'printIframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      document.body.style.cursor = 'wait';
       try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Gagal ambil PDF dari server');
+        if (!response.ok) throw new Error('Gagal ngambil PDF');
         
-        // Ubah data jadi Blob (File Memori)
         const blob = await response.blob();
-        // Bikin URL lokal yang nggak bisa dibajak IDM
         const fileUrl = URL.createObjectURL(blob);
         
-        // Buka di tab baru, IDM bakal diem aja
-        window.open(fileUrl, '_blank');
+        iframe.src = fileUrl;
+        iframe.onload = function() {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+          document.body.style.cursor = 'default';
+        };
       } catch (err) {
-        alert("Error buka PDF: " + err.message);
+        alert("Error pas mau ngeprint: " + err.message);
+        document.body.style.cursor = 'default';
       }
     }
 
+    function cetakLabelPDF() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      cetakLabelThermal(d.id); 
+    }
+
     // --- JURUS ANTI KERTAS KOSONG (HTML KE THERMAL) ---
+// --- JURUS ANTI KERTAS KOSONG (SUDAH ANTI-LIVE SERVER BUG) ---
     function cetakLabelThermal(idTransaksi) {
         let iframe = document.getElementById('printLabelIframe');
         if (!iframe) {
@@ -907,16 +845,18 @@
         
         const doc = iframe.contentWindow.document;
         doc.open();
-        // Bikin desain HTML yang dipaksa margin 0 biar printer langsung motong
+        
+        // KUNCI SAKTI: Penutup HTML dan BODY kita pisah string-nya
+        // biar Live Server gak bisa nemuin dan nyuntik script di dalem sini!
         doc.write(`
             <html>
             <head>
                 <style>
-                    @page { margin: 0; } /* KUNCI UTAMA: HILANGIN MARGIN CHROME */
+                    @page { margin: 0; } 
                     body { 
                         margin: 0; 
                         padding: 4mm 2mm 0 2mm; 
-                        width: 54mm; /* Lebar aman kertas 58mm */
+                        width: 54mm; 
                         font-family: 'Helvetica', 'Arial', sans-serif; 
                         color: black; 
                     }
@@ -940,12 +880,11 @@
                     <div class="dashed"></div>
                     <p style="margin:0; font-size:11px; font-weight:bold;">Cucian Bersih,<br>Hati Tenang</p>
                 </div>
-            </body>
-            </html>
-        `);
+            </bo` + `dy>
+            </ht` + `ml>`
+        );
         doc.close();
         
-        // Jeda dikit biar iframe kerender, trus langsung tembak print
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();

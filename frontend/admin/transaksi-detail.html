@@ -122,7 +122,7 @@
         
         document.getElementById('contentLoading').style.display = 'none';
         document.getElementById('contentDetail').style.display = 'block';
-        document.getElementById('actionButtons').style.display = 'flex'; // Tampilkan tombol
+        document.getElementById('actionButtons').style.display = 'flex'; 
         
         document.getElementById('pelNama').innerText = data.pelanggan_nama || '-';
         document.getElementById('pelTelp').innerText = data.pel_no_telepon || '-';
@@ -191,37 +191,30 @@
       }
     }
 
-    // FUNGSI API CETAK
-    // --- JURUS SILENT PRINT (ANTI IDM) ---
     async function printPDFLangsung(url) {
-      // 1. Bikin iframe tersembunyi kalau belum ada
       let iframe = document.getElementById('printIframe');
       if (!iframe) {
         iframe = document.createElement('iframe');
         iframe.id = 'printIframe';
-        iframe.style.display = 'none'; // Sembunyiin dari layar
+        iframe.style.display = 'none'; 
         document.body.appendChild(iframe);
       }
 
-      // 2. Ubah kursor jadi loading biar kasir tau sistem lagi kerja
       document.body.style.cursor = 'wait';
 
       try {
-        // 3. Tarik PDF diam-diam pake Fetch API
         const response = await fetch(url);
         if (!response.ok) throw new Error('Gagal ngambil PDF dari server');
         
         const blob = await response.blob();
         const fileUrl = URL.createObjectURL(blob);
         
-        // 4. Masukin PDF ke iframe
         iframe.src = fileUrl;
         
-        // 5. Begitu PDF beres dimuat di iframe, langsung hajar print!
         iframe.onload = function() {
           iframe.contentWindow.focus();
           iframe.contentWindow.print();
-          document.body.style.cursor = 'default'; // Balikin kursor normal
+          document.body.style.cursor = 'default'; 
         };
       } catch (err) {
         alert("Error pas mau ngeprint: " + err.message);
@@ -229,7 +222,6 @@
       }
     }
 
-    // FUNGSI TOMBOL CETAK DETAIL TRANSAKSI
     function cetakInvoice() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
@@ -239,28 +231,10 @@
     function cetakLabel() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
-      // Ambil dari URL lalu tembak ke fungsi HTML
       cetakLabelThermal(trxId);
     }
 
-    // FUNGSI ANTI-IDM BUAT BUKA PDF
-    async function bukaPDFTanpaIDM(url) {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Gagal ambil PDF dari server');
-        
-        // Ubah data jadi Blob (File Memori)
-        const blob = await response.blob();
-        // Bikin URL lokal yang nggak bisa dibajak IDM
-        const fileUrl = URL.createObjectURL(blob);
-        
-        // Buka di tab baru, IDM bakal diem aja
-        window.open(fileUrl, '_blank');
-      } catch (err) {
-        alert("Error buka PDF: " + err.message);
-      }
-    }
-    // --- JURUS ANTI KERTAS KOSONG (HTML KE THERMAL) ---
+    // --- JURUS ANTI KERTAS KOSONG (SUDAH ANTI-LIVE SERVER BUG) ---
     function cetakLabelThermal(idTransaksi) {
         let iframe = document.getElementById('printLabelIframe');
         if (!iframe) {
@@ -272,16 +246,18 @@
         
         const doc = iframe.contentWindow.document;
         doc.open();
-        // Bikin desain HTML yang dipaksa margin 0 biar printer langsung motong
+        
+        // KUNCI SAKTI: Penutup HTML dan BODY kita pisah string-nya
+        // biar Live Server gak bisa nemuin dan nyuntik script di dalem sini!
         doc.write(`
             <html>
             <head>
                 <style>
-                    @page { margin: 0; } /* KUNCI UTAMA: HILANGIN MARGIN CHROME */
+                    @page { margin: 0; } 
                     body { 
                         margin: 0; 
                         padding: 4mm 2mm 0 2mm; 
-                        width: 54mm; /* Lebar aman kertas 58mm */
+                        width: 54mm; 
                         font-family: 'Helvetica', 'Arial', sans-serif; 
                         color: black; 
                     }
@@ -305,12 +281,11 @@
                     <div class="dashed"></div>
                     <p style="margin:0; font-size:11px; font-weight:bold;">Cucian Bersih,<br>Hati Tenang</p>
                 </div>
-            </body>
-            </html>
-        `);
+            </bo` + `dy>
+            </ht` + `ml>`
+        );
         doc.close();
         
-        // Jeda dikit biar iframe kerender, trus langsung tembak print
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
