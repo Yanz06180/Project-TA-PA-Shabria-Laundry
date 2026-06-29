@@ -16,83 +16,73 @@ def download_invoice(id_transaksi):
     width, height = A4
     
     # --- HEADER INVOICE ---
-    # Bikin blok warna biru di atas
     c.setFillColor(colors.HexColor("#1565C0"))
     c.rect(0, height - 40*mm, width, 40*mm, fill=1, stroke=0)
     
-    # Masukin Logo
     logo_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'Logo.jpeg')
     try:
-        # Mask='auto' biar background logo lu transparan menyatu sama biru
         c.drawImage(logo_path, 15*mm, height - 35*mm, width=25*mm, height=25*mm, preserveAspectRatio=True, mask='auto')
     except Exception as e:
         print(f"Gagal load logo: {e}")
         
-    # Teks Perusahaan (Warna Putih)
     c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 22)
+    c.setFont("Courier-Bold", 22) # <-- Udah diganti Courier
     c.drawString(45*mm, height - 20*mm, "SHABRIA LAUNDRY")
-    c.setFont("Helvetica", 10)
+    c.setFont("Courier", 10)      # <-- Udah diganti Courier
     c.drawString(45*mm, height - 26*mm, "Jl. Raya Salatiga No. 123 | Telp: 08123456789")
     
-    # Tulisan INVOICE gede di kanan
-    c.setFont("Helvetica-Bold", 30)
+    c.setFont("Courier-Bold", 30) # <-- Udah diganti Courier
     c.drawRightString(width - 15*mm, height - 25*mm, "INVOICE")
     
     # --- DETAIL CUSTOMER & TRANSAKSI ---
     c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont("Courier-Bold", 11)
     c.drawString(15*mm, height - 55*mm, "Kepada Yth:")
-    c.setFont("Helvetica", 11)
-    c.drawString(15*mm, height - 62*mm, "Pelanggan Setia") # Nanti lu bisa passing data DB kesini
+    c.setFont("Courier", 11)
+    c.drawString(15*mm, height - 62*mm, "Pelanggan Setia") 
     
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont("Courier-Bold", 11)
     c.drawString(120*mm, height - 55*mm, "Detail Transaksi:")
-    c.setFont("Helvetica", 11)
+    c.setFont("Courier", 11)
     c.drawString(120*mm, height - 62*mm, f"No. Nota  : {id_transaksi}")
     c.drawString(120*mm, height - 68*mm, "Status      : LUNAS")
     
     # --- TABEL LAYANAN ---
-    # Header Tabel
     c.setFillColor(colors.HexColor("#F3F4F6"))
     c.rect(15*mm, height - 90*mm, width - 30*mm, 10*mm, fill=1, stroke=0)
     
     c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont("Courier-Bold", 10)
     c.drawString(20*mm, height - 87*mm, "DESKRIPSI LAYANAN")
     c.drawRightString(width - 20*mm, height - 87*mm, "SUBTOTAL")
     
-    # Isi Tabel (Dummy dlu, nanti lu sambungin sama query DB lu)
-    c.setFont("Helvetica", 10)
+    c.setFont("Courier", 10)
     c.drawString(20*mm, height - 100*mm, "1. Rincian Pakaian (Sesuai Database)")
     c.drawRightString(width - 20*mm, height - 100*mm, "Rp ...")
     
-    # Garis Pembatas
     c.setStrokeColor(colors.lightgrey)
     c.line(15*mm, height - 110*mm, width - 15*mm, height - 110*mm)
     
-    # Total Bayar
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont("Courier-Bold", 14)
     c.setFillColor(colors.HexColor("#1565C0"))
     c.drawString(90*mm, height - 125*mm, "TOTAL BAYAR:")
     c.drawRightString(width - 20*mm, height - 125*mm, "Rp ...")
     
     # --- FOOTER ---
     c.setFillColor(colors.grey)
-    c.setFont("Helvetica-Oblique", 9)
+    c.setFont("Courier-Oblique", 9) # <-- Udah diganti Courier miring
     c.drawCentredString(width/2, 20*mm, "Terima kasih telah mempercayakan pakaian Anda pada Shabria Laundry.")
     
     c.save()
     buffer.seek(0)
-    # as_attachment=False biar ga di-download IDM
     return send_file(buffer, as_attachment=False, download_name=f"Invoice_{id_transaksi}.pdf", mimetype="application/pdf")
-
 
 # --- 2. DESAIN LABEL THERMAL (RAPI & TEGAS) ---
 # --- 2. DESAIN LABEL THERMAL 58mm (LURUS & PRO) ---
 @invoice_bp.route("/label/download/<id_transaksi>", methods=["GET"])
 def download_label(id_transaksi):
     buffer = io.BytesIO()
+    
     
     # KUNCI FIX-NYA: Lebar wajib 58mm (ukuran standar printer kasir kecil)
     # Tinggi kita set 60mm (Proporsional lurus ke bawah)
