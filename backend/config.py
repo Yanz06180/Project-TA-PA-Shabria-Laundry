@@ -33,7 +33,7 @@ DEBUG = True
 # CORS origins yang diizinkan mengakses backend (Port Live Server Anda)
 CORS_ORIGINS = ["*"]
 
-# Keamanan Session Cookie untuk Lintas Port Origin (Localhost)
+
 # Menggunakan 'Lax' dan 'False' agar cookie tetap dikirim oleh browser meskipun beda port tanpa HTTPS
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = False
