@@ -31,12 +31,7 @@ SECRET_KEY = "shabria-laundry-secret-key-ganti-ini"
 DEBUG = True
 
 # CORS origins yang diizinkan mengakses backend (Port Live Server Anda)
-CORS_ORIGINS = [
-    "http://localhost:5500", 
-    "http://127.0.0.1:5500",
-    "http://localhost:5501",
-    "http://127.0.0.1:5501"
-]
+CORS_ORIGINS = ["*"]
 
 # Keamanan Session Cookie untuk Lintas Port Origin (Localhost)
 # Menggunakan 'Lax' dan 'False' agar cookie tetap dikirim oleh browser meskipun beda port tanpa HTTPS

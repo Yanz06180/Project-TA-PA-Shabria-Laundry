@@ -1,4 +1,4 @@
-const BASE_URL = 'http://https://project-ta-pa-shabria-laundry-backend.vercel.app/api';
+const BASE_URL = 'https://project-ta-pa-shabria-laundry-backend.vercel.app';
 
 async function _req(method, path, body) {
   var opts = {
