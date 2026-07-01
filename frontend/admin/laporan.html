@@ -307,8 +307,11 @@
 
     async function downloadHarian() {
       try {
-        // Sesuaikan URL ke backend lu (misal: http://127.0.0.1:5000/api/laporan/harian/download)
-        const res = await fetch('http://127.0.0.1:5000/api/laporan/harian/download');
+        // Sesuaikan URL ke backend lu (misal: https://project-ta-pa-shabria-laundry-cqc8.vercel.app/api/laporan/harian/download)
+        const res = await fetch('https://project-ta-pa-shabria-laundry-cqc8.vercel.app/api/laporan/harian/download', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
         if (!res.ok) throw new Error("Gagal download laporan");
         
         const blob = await res.blob();
