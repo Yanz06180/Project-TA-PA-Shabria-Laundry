@@ -656,6 +656,8 @@
         }
 
         document.getElementById('successActions').innerHTML = `
+          <button onclick="cetakInvoicePDF()" style="background:#1565C0; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">📄 Print Invoice</button>
+          <button onclick="downloadInvoicePDF()" style="background:#059669; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">⬇️ Download Invoice</button>
           <button onclick="cetakLabelPDF()" style="background:#EAB308; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🏷️ Cetak Label</button>
           <button onclick="cetakStruk()" style="background:#111827; color:white; font-weight:700; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">🖨️ Struk Kasir</button>
           ${waButtonHtml}
@@ -892,6 +894,38 @@
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
         }, 250);
+    }
+    function cetakInvoicePDF() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      printPDFLangsung(`http://127.0.0.1:5000/api/invoice/download/${d.id}`);
+    }
+
+    async function downloadInvoicePDF() {
+      const d = window.lastTrxData;
+      if(!d) return;
+      const url = `http://127.0.0.1:5000/api/invoice/download/${d.id}`;
+      
+      try {
+        document.body.style.cursor = 'wait';
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Gagal download PDF');
+        
+        const blob = await response.blob();
+        const fileUrl = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = fileUrl;
+        a.download = `Invoice_Shabria_${d.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(fileUrl);
+      } catch (err) {
+        alert("Error pas mau download: " + err.message);
+      } finally {
+        document.body.style.cursor = 'default';
+      }
     }
   </script>
 </body>

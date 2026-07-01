@@ -43,7 +43,10 @@
             </div>
             
             <div id="actionButtons" style="display:none; gap:10px;">
-              <button onclick="cetakInvoice()" style="background:#1565C0; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Cetak Invoice</button>
+              <button onclick="cetakInvoice()" style="background:#1565C0; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📄 Print Invoice</button>
+              
+              <button onclick="downloadInvoice()" style="background:#059669; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">⬇️ Download Invoice</button>
+              
               <button onclick="cetakLabel()" style="background:#EAB308; color:white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">🏷️ Cetak Label</button>
             </div>
           </div>
@@ -290,6 +293,37 @@
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
         }, 250);
+    }
+    // FUNGSI BUAT DOWNLOAD PDF (Murni nyedot file, bukan di-print)
+    async function downloadInvoice() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const trxId = urlParams.get('id');
+      const url = `http://127.0.0.1:5000/api/invoice/download/${trxId}`;
+      
+      try {
+        document.body.style.cursor = 'wait'; // Kursor jadi loading
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Gagal download PDF dari server');
+        
+        // Ubah jadi blob (file mentah)
+        const blob = await response.blob();
+        const fileUrl = URL.createObjectURL(blob);
+        
+        // Bikin tag <a> tersembunyi buat maksa browser nge-download
+        const a = document.createElement('a');
+        a.href = fileUrl;
+        a.download = `Invoice_Shabria_${trxId}.pdf`; // Nama file pas didownload
+        document.body.appendChild(a);
+        a.click();
+        
+        // Bersihin sampah dari memori
+        a.remove();
+        URL.revokeObjectURL(fileUrl);
+      } catch (err) {
+        alert("Error pas mau download: " + err.message);
+      } finally {
+        document.body.style.cursor = 'default';
+      }
     }
   </script>
 </body>
