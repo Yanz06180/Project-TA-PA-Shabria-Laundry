@@ -18,8 +18,9 @@ import config
 
 
 app = Flask(__name__)
-app.secret_key = config.SECRET_KEY
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+app.secret_key = config.SECRET_KEY
+
 
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
