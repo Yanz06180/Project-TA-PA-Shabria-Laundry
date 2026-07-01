@@ -1,6 +1,4 @@
-from flask import Flask
 from flask_cors import CORS
-import config
 from routes.invoice import invoice_bp  
 
 from routes.auth      import auth_bp
@@ -18,7 +16,9 @@ import config
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, 
+     resources={r"/*": {"origins": "https://project-ta-pa-shabria-laundry-q4b2.vercel.app"}}, 
+     supports_credentials=True)
 app.secret_key = config.SECRET_KEY
 
 
