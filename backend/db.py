@@ -5,7 +5,7 @@ Helper koneksi TiDB — dipakai oleh semua route
 import pymysql
 import pymysql.cursors
 import config
-
+import os
 
 def get_conn():
     """Buat koneksi baru ke TiDB. Panggil di setiap request."""
@@ -16,7 +16,7 @@ def get_conn():
         user=cfg["user"],
         password=cfg["password"],
         database=cfg["database"],
-        ssl_ca=cfg.get("ssl_ca"),
+        ssl_ca=os.path.join(os.path.dirname(__file__), 'isrgrootx1.pem'),
         ssl_verify_cert=cfg.get("ssl_verify_cert", True),
         ssl_verify_identity=cfg.get("ssl_verify_identity", True),
         charset=cfg.get("charset", "utf8mb4"),
