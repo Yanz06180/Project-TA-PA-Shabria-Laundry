@@ -11,7 +11,7 @@ from db import query  # Menggunakan fungsi query dari db.py kamu
 # Bikin blueprint untuk route laporan
 report_bp = Blueprint('report', __name__)
 
-# Karena di api.js BASE_URL-nya 'http://localhost:5000/api' dan endpoint-nya '/send-report',
+# Karena di api.js BASE_URL-nya 'http://https://project-ta-pa-shabria-laundry-backend.vercel.app/api' dan endpoint-nya '/send-report',
 # URL utuhnya jadi '/api/send-report'
 @report_bp.route('/api/send-report', methods=['POST'])
 def send_report():
