@@ -19,15 +19,16 @@ import config
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE=False,
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
 )
 
 
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
 
 app.register_blueprint(auth_bp,      url_prefix="/api/auth")
 app.register_blueprint(pelanggan_bp, url_prefix="/api/pelanggan")

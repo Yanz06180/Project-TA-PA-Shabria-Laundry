@@ -1,6 +1,15 @@
 {
   "builds": [{ "src": "app.py", "use": "@vercel/python" }],
   "routes": [
-    { "src": "/(.*)", "dest": "app.py", "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] }
+    {
+      "src": "/(.*)",
+      "dest": "app.py",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    }
   ]
 }
