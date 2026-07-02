@@ -210,8 +210,7 @@
       updateStepUI();
 
       try {
-        const resJenis = await fetch('https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/layanan/jenis');
-        jenisBarangAll = await resJenis.json();
+        jenisBarangAll = await api.layanan.jenis();
 
         [customers, layananAll, addons] = await Promise.all([
           api.pelanggan.all(),
