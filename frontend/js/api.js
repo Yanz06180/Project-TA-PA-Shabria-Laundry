@@ -1,4 +1,4 @@
-const BASE_URL = 'https://praktek-deploy-pa.vercel.app'; // Gw hapus slash di akhirnya
+const BASE_URL = 'https://project-ta-pa-shabria-laundry-production.up.railway.app'; // Gw hapus slash di akhirnya
 
 async function _req(method, path, body) {
   var opts = {
