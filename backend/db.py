@@ -24,8 +24,6 @@ pool = PooledDB(
     cursorclass=pymysql.cursors.DictCursor,
     maxconnections=5,
     blocking=True,
-    maxconnections=5,
-    blocking=True,
     mincached=2,  # Wajib! Biar ada 2 koneksi SSL yang selalu standby siap pakai
     ping=1        # Wajib! Biar otomatis ngecek koneksi mati/hidup
 )
