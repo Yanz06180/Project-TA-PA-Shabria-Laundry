@@ -10,13 +10,17 @@ import os
 def get_conn():
     """Buat koneksi baru ke TiDB. Panggil di setiap request."""
     cfg = config.TIDB_CONFIG.copy()
+    
+    # Ini dynamic path yang udah bener banget. Jangan diubah!
+    pem_path = os.path.join(os.path.dirname(__file__), 'isrgrootx1.pem')
+    
     return pymysql.connect(
         host=cfg["host"],
         port=cfg["port"],
         user=cfg["user"],
         password=cfg["password"],
         database=cfg["database"],
-        ssl_ca=os.path.join(os.path.dirname(__file__), 'isrgrootx1.pem'),
+        ssl_ca=pem_path,
         ssl_verify_cert=cfg.get("ssl_verify_cert", True),
         ssl_verify_identity=cfg.get("ssl_verify_identity", True),
         charset=cfg.get("charset", "utf8mb4"),

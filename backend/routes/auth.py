@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify, session
-import bcrypt
 from db import query
 
 auth_bp = Blueprint("auth", __name__)
@@ -25,13 +24,8 @@ def login():
     if not user:
         return jsonify({"error": "Email atau password salah"}), 401
 
-    pw_match = False
-    try:
-        pw_match = bcrypt.checkpw(password.encode(), user["password"].encode())
-    except Exception:
-        pw_match = (password == user["password"])
-
-    if not pw_match:
+    # Cek password polosan langsung sesuai database lu
+    if password != user["password"]:
         return jsonify({"error": "Email atau password salah"}), 401
 
     # PENTING: lowercase role agar konsisten di frontend

@@ -6,7 +6,7 @@
       "dest": "app.py",
       "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       "headers": {
-        "Access-Control-Allow-Origin": "https://project-ta-pa-shabria-laundry-q4b2.vercel.app",
+        "Access-Control-Allow-Origin": "https://project-ta-pa-shabria-laundry-jeco.vercel.app",
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization"

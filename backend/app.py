@@ -16,9 +16,7 @@ import config
 
 
 app = Flask(__name__)
-CORS(app, 
-     resources={r"/*": {"origins": "https://project-ta-pa-shabria-laundry-q4b2.vercel.app"}}, 
-     supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "https://project-ta-pa-shabria-laundry-jeco.vercel.app"}}, supports_credentials=True)
 app.secret_key = config.SECRET_KEY
 
 

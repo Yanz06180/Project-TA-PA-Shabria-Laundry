@@ -1,4 +1,4 @@
-const BASE_URL = 'https://praktek-deploy-pa.vercel.app/';
+const BASE_URL = 'https://praktek-deploy-pa.vercel.app'; // Gw hapus slash di akhirnya
 
 async function _req(method, path, body) {
   var opts = {
@@ -38,9 +38,9 @@ var api = {
     all:         function()      { return api.get('/layanan/'); },
     jenis:       function()      { return api.get('/layanan/jenis'); },
     create:      function(d)     { return api.post('/layanan/', d); },
-    createJenis: function(d)     { return api.post('/layanan/jenis', d); }, // 👈 INI TAMBAHANNYA
+    createJenis: function(d)     { return api.post('/layanan/jenis', d); },
     update:      function(id,d)  { return api.put('/layanan/'+id, d); },
-    delete:      function(id)    { return api.delete('/layanan/'+id); }, // (Biarkan aja di API buat jaga-jaga)
+    delete:      function(id)    { return api.delete('/layanan/'+id); },
   },
   transaksi: {
     all: function(p) {
@@ -53,17 +53,11 @@ var api = {
     },
   },
   laporan: {
-    pengeluaran:    function(p) {
-      return api.get('/laporan/pengeluaran?'+new URLSearchParams(p||{}).toString());
-    },
+    pengeluaran:    function(p) { return api.get('/laporan/pengeluaran?'+new URLSearchParams(p||{}).toString()); },
     addPengeluaran: function(d) { return api.post('/laporan/pengeluaran', d); },
-    ringkasan:      function(p) {
-      return api.get('/laporan/ringkasan?'+new URLSearchParams(p||{}).toString());
-    },
-    perKategori:    function(p) {
-      return api.get('/laporan/per-kategori?'+new URLSearchParams(p||{}).toString());
-    },
-    kirimEmail:     function(d) { return api.post('/send-report', d); }, // 🌟 BARU: Untuk kirim email laporan
+    ringkasan:      function(p) { return api.get('/laporan/ringkasan?'+new URLSearchParams(p||{}).toString()); },
+    perKategori:    function(p) { return api.get('/laporan/per-kategori?'+new URLSearchParams(p||{}).toString()); },
+    kirimEmail:     function(d) { return api.post('/send-report', d); },
   },
   addon: {
     all:    function()      { return api.get('/addon/'); },
@@ -139,4 +133,3 @@ async function doLogout() {
   sessionStorage.removeItem('currentUser');
   window.location.href = '../index.html';
 }
-
