@@ -190,7 +190,7 @@
       btn.innerText = 'Menyimpan...';
 
       try {
-        const res = await fetch(`https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/transaksi/${trxId}/status`, {
+        const res = await fetch(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/transaksi/${trxId}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status_pengerjaan: newStatus })
