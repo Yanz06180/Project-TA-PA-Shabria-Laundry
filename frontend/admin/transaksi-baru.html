@@ -743,6 +743,10 @@
       
       let itemText = d.cart.map(i => `- ${i.nama} (${i.qty}x)`).join('\n');
       
+      // 1. KUNCI SAKTI: Kita bikin URL Download langsung ke Railway
+      const pdfUrl = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
+      
+      // 2. Selipin URL-nya ke dalam teks WA
       const text = `*SHABRIA LAUNDRY*\n\n`
         + `Halo Kak *${d.customer.pel_first_name}*,\n`
         + `Terima kasih telah mempercayakan laundry pakaian Anda kepada kami.\n\n`
@@ -750,33 +754,22 @@
         + `No Nota: ${d.id}\n`
         + `Layanan:\n${itemText}\n\n`
         + `*Total Bayar:* ${formatRupiah(d.total)}\n\n`
-        + `Berikut kami lampirkan Invoice detail transaksi Anda. 🙏`;
+        + `📄 *Unduh Invoice Anda pada link berikut:*\n${pdfUrl}\n\n`
+        + `Terima kasih! 🙏`;
         
       const WA_API_URL = "https://api.fonnte.com/send"; 
       const WA_TOKEN   = "J3AHPsxHJE2duqmPT8oT"; 
 
       const btn = document.querySelector('button[onclick="kirimWA()"]');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '⏳ Menyusun PDF & Mengirim...';
+      btn.innerHTML = '⏳ Mengirim WA...';
       btn.disabled = true;
 
       try {
-        // 1. Tarik file PDF-nya dari Railway ke browser lu dulu
-        const pdfUrl = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
-        
-        const pdfResponse = await fetch(pdfUrl);
-        if (!pdfResponse.ok) throw new Error("Gagal mengambil file PDF dari server");
-        
-        // 2. Ubah wujudnya jadi file biner (Blob) yang valid
-        const pdfBlob = await pdfResponse.blob();
-        const fileName = `Invoice_Shabria_${d.id}.pdf`;
-        const fileInvoice = new File([pdfBlob], fileName, { type: "application/pdf" });
-
-        // 3. Bungkus dan kirim file fisiknya ke Fonnte menggunakan parameter 'file'
+        // Kita cuma ngirim teks sekarang, no file!
         const formData = new FormData();
         formData.append('target', phone);
         formData.append('message', text);
-        formData.append('file', fileInvoice); // Kunci utamanya di sini!
 
         const response = await fetch(WA_API_URL, {
           method: 'POST',
@@ -789,7 +782,7 @@
         const res = await response.json();
 
         if (res.status === true || res.status === 'success') {
-          showToast('✅ Pesan dan File Invoice berhasil dikirim via WA!', 'success');
+          showToast('✅ Pesan WA berhasil dikirim!', 'success');
           btn.style.display = 'none'; 
         } else {
           showToast('Gagal ngirim WA: ' + (res.reason || res.message), 'error');
