@@ -1,6 +1,13 @@
 from flask import Blueprint, request, jsonify
 from db import query, execute
 import requests # <-- INI TAMBAHAN BUAT NGE-HIT API FONNTE
+import hashlib
+
+SECRET_KEY = "SHABRIA_LAUNDRY_RAHASIA_NEGARA" # Bebas lu isi apa, yang penting panjang
+
+def sign_trx(id_trx):
+    # Menggabungkan ID Transaksi dengan Kunci Rahasia, lalu di-hash jadi teks acak
+    return hashlib.sha256(f"{id_trx}{SECRET_KEY}".encode()).hexdigest()
 
 transaksi_bp = Blueprint("transaksi", __name__)
 
@@ -106,6 +113,7 @@ def get_one(id):
            WHERE dt.transaksi_id_transaksi = %s""",
         (id,)
     )
+    trx["signature"] = sign_trx(id) # <-- Tambahin ini
     return jsonify(trx)
 
 @transaksi_bp.route("/", methods=["POST"])
@@ -145,7 +153,9 @@ def create():
                     (did, addon_id, ao["tambahan_harga"], qty)
                 )
 
-    return jsonify({"id_transaksi": tid}), 201
+    # Di dalam def create():
+    sig = sign_trx(tid)
+    return jsonify({"id_transaksi": tid, "signature": sig}), 201
 
 @transaksi_bp.route("/<string:id>/status", methods=["PATCH"])
 def update_status(id):

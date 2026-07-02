@@ -119,9 +119,10 @@
 
     async function loadDetail(id) {
       try {
-        const res = await fetch(`https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/transaksi/${id}`);
+        const res = await fetch(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/transaksi/${id}`);
         if (!res.ok) throw new Error("Data tidak ditemukan");
         const data = await res.json();
+        window.trxSignature = data.signature; // <--- SIMPAN KE GLOBAL
         
         document.getElementById('contentLoading').style.display = 'none';
         document.getElementById('contentDetail').style.display = 'block';
@@ -228,7 +229,7 @@
     function cetakInvoice() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
-      printPDFLangsung(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${trxId}`);
+      printPDFLangsung(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${trxId}?sig=${window.trxSignature}`);
     }
 
     function cetakLabel() {
@@ -298,7 +299,7 @@
     async function downloadInvoice() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
-      const url = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
+      const url = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${trxId}?sig=${window.trxSignature}`;
       
       try {
         document.body.style.cursor = 'wait'; // Kursor jadi loading

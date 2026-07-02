@@ -5,9 +5,12 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib import colors
+from flask import request
+import hashlib
 
 # KUNCI UTAMA: Import query buat ngambil data dari database
 from db import query 
+SECRET_KEY = "SHABRIA_LAUNDRY_RAHASIA_NEGARA"
 
 invoice_bp = Blueprint('invoice', __name__)
 
@@ -17,6 +20,11 @@ def format_rupiah(angka):
 
 @invoice_bp.route("/invoice/download/<id_transaksi>", methods=["GET"])
 def download_invoice(id_transaksi):
+    sig = request.args.get("sig")
+    expected_sig = hashlib.sha256(f"{id_transaksi}{SECRET_KEY}".encode()).hexdigest()
+    
+    if sig != expected_sig:
+        return "Akses Ditolak! Link tidak valid atau sudah dimanipulasi.", 403
     # --- 1. AMBIL DATA TRANSAKSI UTAMA DARI DB ---
     trx = query(
         """SELECT t.*, CONCAT(p.pel_first_name,' ',p.pel_last_name) AS pelanggan_nama

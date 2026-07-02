@@ -624,6 +624,7 @@
 
         window.lastTrxData = {
           id: result.id_transaksi,
+          signature: result.signature,
           customer: selectedCustomer,
           cart: cart,
           selT: selT,
@@ -744,7 +745,7 @@
       let itemText = d.cart.map(i => `- ${i.nama} (${i.qty}x)`).join('\n');
       
       // 1. KUNCI SAKTI: Kita bikin URL Download langsung ke Railway
-      const pdfUrl = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
+      const pdfUrl = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}?sig=${d.signature}`;
       
       // 2. Selipin URL-nya ke dalam teks WA
       const text = `*SHABRIA LAUNDRY*\n\n`
@@ -893,13 +894,13 @@
     function cetakInvoicePDF() {
       const d = window.lastTrxData;
       if(!d) return;
-      printPDFLangsung(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`);
+      printPDFLangsung(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}?sig=${d.signature}`);
     }
 
     async function downloadInvoicePDF() {
       const d = window.lastTrxData;
       if(!d) return;
-      const url = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
+      const url = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}?sig=${d.signature}`;
       
       try {
         document.body.style.cursor = 'wait';
