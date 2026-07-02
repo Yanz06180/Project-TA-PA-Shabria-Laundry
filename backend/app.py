@@ -43,6 +43,9 @@ app.register_blueprint(invoice_bp, url_prefix='/api')
 def health():
     return {"status": "ok"}
 
+import os
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
     
