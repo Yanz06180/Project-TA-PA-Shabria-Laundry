@@ -3,30 +3,37 @@ Helper koneksi TiDB — dipakai oleh semua route
 """
 
 import pymysql
+from dbutils.pooled_db import PooledDB
 import pymysql.cursors
 import config
 import os
 
+# Inisialisasi PooledDB
+pool = PooledDB(
+    creator=pymysql,
+    host=config.TIDB_CONFIG["host"],
+    port=config.TIDB_CONFIG["port"],
+    user=config.TIDB_CONFIG["user"],
+    password=config.TIDB_CONFIG["password"],
+    database=config.TIDB_CONFIG["database"],
+    ssl_ca=os.path.join(os.path.dirname(__file__), 'isrgrootx1.pem'),
+    ssl_verify_cert=config.TIDB_CONFIG.get("ssl_verify_cert", True),
+    ssl_verify_identity=config.TIDB_CONFIG.get("ssl_verify_identity", True),
+    charset=config.TIDB_CONFIG.get("charset", "utf8mb4"),
+    autocommit=config.TIDB_CONFIG.get("autocommit", True),
+    cursorclass=pymysql.cursors.DictCursor,
+    maxconnections=5,
+    blocking=True,
+    maxconnections=5,
+    blocking=True,
+    mincached=2,  # Wajib! Biar ada 2 koneksi SSL yang selalu standby siap pakai
+    ping=1        # Wajib! Biar otomatis ngecek koneksi mati/hidup
+)
+
 def get_conn():
-    """Buat koneksi baru ke TiDB. Panggil di setiap request."""
-    cfg = config.TIDB_CONFIG.copy()
-    
-    # Ini dynamic path yang udah bener banget. Jangan diubah!
-    pem_path = os.path.join(os.path.dirname(__file__), 'isrgrootx1.pem')
-    
-    return pymysql.connect(
-        host=cfg["host"],
-        port=cfg["port"],
-        user=cfg["user"],
-        password=cfg["password"],
-        database=cfg["database"],
-        ssl_ca=pem_path,
-        ssl_verify_cert=cfg.get("ssl_verify_cert", True),
-        ssl_verify_identity=cfg.get("ssl_verify_identity", True),
-        charset=cfg.get("charset", "utf8mb4"),
-        autocommit=cfg.get("autocommit", True),
-        cursorclass=pymysql.cursors.DictCursor,   # hasil query jadi dict
-    )
+    # 2. get_conn() sekarang TIDAK buka koneksi baru,
+    # tapi cuma nyomot koneksi yang udah standby di kolam. (Instant!)
+    return pool.connection()
 
 
 def query(sql: str, params=None, fetchall=True):
