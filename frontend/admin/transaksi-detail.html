@@ -228,7 +228,7 @@
     function cetakInvoice() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
-      printPDFLangsung(`https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/invoice/download/${trxId}`);
+      printPDFLangsung(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${trxId}`);
     }
 
     function cetakLabel() {
@@ -298,7 +298,7 @@
     async function downloadInvoice() {
       const urlParams = new URLSearchParams(window.location.search);
       const trxId = urlParams.get('id');
-      const url = `https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/invoice/download/${trxId}`;
+      const url = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
       
       try {
         document.body.style.cursor = 'wait'; // Kursor jadi loading

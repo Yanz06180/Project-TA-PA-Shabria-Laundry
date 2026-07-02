@@ -761,7 +761,7 @@
       btn.disabled = true;
 
       try {
-        const pdfUrl = `https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/invoice/download/${d.id}`;
+        const pdfUrl = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
         const pdfResponse = await fetch(pdfUrl);
         if (!pdfResponse.ok) throw new Error("Gagal mengambil file PDF dari server");
         
@@ -897,13 +897,13 @@
     function cetakInvoicePDF() {
       const d = window.lastTrxData;
       if(!d) return;
-      printPDFLangsung(`https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/invoice/download/${d.id}`);
+      printPDFLangsung(`https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`);
     }
 
     async function downloadInvoicePDF() {
       const d = window.lastTrxData;
       if(!d) return;
-      const url = `https://project-ta-pa-shabria-laundry-jeco.vercel.app/api/invoice/download/${d.id}`;
+      const url = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
       
       try {
         document.body.style.cursor = 'wait';
