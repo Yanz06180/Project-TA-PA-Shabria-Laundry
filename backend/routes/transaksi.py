@@ -37,6 +37,7 @@ def get_all():
     date_from = request.args.get("from", "2000-01-01")
     date_to   = request.args.get("to",   "2099-12-31")
 
+    # Kueri 1: Ngambil Induk Transaksi (Cuma 1x Nanya DB)
     rows = query(
         """SELECT t.id_transaksi, t.tanggal_masuk, t.est_tanggal_selesai,
                   t.total_bayar, t.mtd_pembayaran, t.sudah_dibayar,
@@ -52,14 +53,36 @@ def get_all():
         (date_from, date_to)
     )
 
+    if not rows:
+        return jsonify([])
+
+    # 1. Kumpulin semua ID Transaksi yang didapet di array Python
+    trx_ids = [r["id_transaksi"] for r in rows]
+    
+    # 2. Bikin placeholder %s sebanyak jumlah ID biar dinamis
+    placeholders = ', '.join(['%s'] * len(trx_ids))
+    
+    # Kueri 2: Ngambil SEMUA Detail Transaksi SEKALIGUS (Cuma 1x Nanya DB lagi)
+    all_details = query(
+        f"""SELECT dt.*, l.lay_nama, l.icon, l.satuan
+           FROM detail_transaksi dt
+           JOIN layanan l ON dt.layanan_id_layanan = l.id_layanan
+           WHERE dt.transaksi_id_transaksi IN ({placeholders})""",
+        tuple(trx_ids)
+    )
+
+    # 3. Kita kelompokkan detail-nya ke masing-masing ID transaksi pakai Hash Map
+    details_map = {}
+    for detail in all_details:
+        tid = detail["transaksi_id_transaksi"]
+        if tid not in details_map:
+            details_map[tid] = []
+        details_map[tid].append(detail)
+
+    # 4. Tempelin kembali detailnya ke tiap baris transaksi secara kilat di RAM
     for trx in rows:
-        trx["detail"] = query(
-            """SELECT dt.*, l.lay_nama, l.icon, l.satuan
-               FROM detail_transaksi dt
-               JOIN layanan l ON dt.layanan_id_layanan = l.id_layanan
-               WHERE dt.transaksi_id_transaksi = %s""",
-            (trx["id_transaksi"],)
-        )
+        trx["detail"] = details_map.get(trx["id_transaksi"], [])
+
     return jsonify(rows)
 
 @transaksi_bp.route("/<string:id>", methods=["GET"])
