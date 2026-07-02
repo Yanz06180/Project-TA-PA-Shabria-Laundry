@@ -761,19 +761,18 @@
       btn.disabled = true;
 
       try {
+        // 1. Langsung pakai URL Railway lu, JANGAN di-fetch jadi Blob!
         const pdfUrl = `https://project-ta-pa-shabria-laundry-production.up.railway.app/api/invoice/download/${d.id}`;
-        const pdfResponse = await fetch(pdfUrl);
-        if (!pdfResponse.ok) throw new Error("Gagal mengambil file PDF dari server");
-        
-        const pdfBlob = await pdfResponse.blob();
-        const fileName = `Invoice_Shabria_${d.id}.pdf`;
-        const fileInvoice = new File([pdfBlob], fileName, { type: "application/pdf" });
 
         const formData = new FormData();
         formData.append('target', phone);
         formData.append('message', text);
-        formData.append('file', fileInvoice);
-        formData.append('filename', fileName);
+        
+        // 2. KUNCI SAKTI: Kasih Fonnte URL publiknya, biar server mereka yang kerja
+        formData.append('url', pdfUrl); 
+        
+        // 3. (Opsional) Kasih nama file biar rapi pas masuk di HP customer
+        formData.append('filename', `Invoice_Shabria_${d.id}.pdf`);
 
         const response = await fetch(WA_API_URL, {
           method: 'POST',
