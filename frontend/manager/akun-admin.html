@@ -175,7 +175,7 @@
       try {
         await api.user.toggleAktif(id, !isCurrentlyAktif);
         showToast(
-          isCurrentlyAktif ? 'Akun berhasil dinonaktifkan' : 'Akun berhasil diaktifkan',
+          isCurrentlyAktif ? 'Akun berhasil diaktifkan' : 'Akun berhasil dinonaktifkan',
           'success'
         );
         await loadUsers();
