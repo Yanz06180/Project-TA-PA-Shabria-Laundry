@@ -120,15 +120,22 @@ def get_one(id):
 def create():
     d   = request.get_json()
     tid = gen_id()
-
+    
+    # --- LOGIKA UANG CASH BARU ---
+    mtd = d["mtd_pembayaran"]
+    tot = int(d["total_bayar"])
+    # Kalau Cashless otomatis uang_cash disamain kayak total bayar
+    uang_cash = tot if mtd.lower() == "cashless" else int(d.get("uang_cash", 0))
+    
+    # Insert ke tabel transaksi (sudah ditambah uang_cash)
     execute(
         """INSERT INTO transaksi
            (id_transaksi, pelanggan_id_pelanggan, users_id_user,
-            tanggal_masuk, est_tanggal_selesai, total_bayar, mtd_pembayaran, sudah_dibayar)
-           VALUES (%s,%s,%s,NOW(),%s,%s,%s,%s)""",
+            tanggal_masuk, est_tanggal_selesai, total_bayar, mtd_pembayaran, sudah_dibayar, uang_cash)
+           VALUES (%s,%s,%s,NOW(),%s,%s,%s,%s,%s)""",
         (tid, d["id_pelanggan"], d["id_user"],
-         d.get("est_tanggal_selesai"), d["total_bayar"],
-         d["mtd_pembayaran"], int(d.get("sudah_dibayar", 1)))
+         d.get("est_tanggal_selesai"), tot,
+         mtd, int(d.get("sudah_dibayar", 1)), uang_cash)
     )
 
     for item in d.get("items", []):
@@ -153,7 +160,6 @@ def create():
                     (did, addon_id, ao["tambahan_harga"], qty)
                 )
 
-    # Di dalam def create():
     sig = sign_trx(tid)
     return jsonify({"id_transaksi": tid, "signature": sig}), 201
 

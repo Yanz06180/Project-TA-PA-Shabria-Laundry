@@ -143,7 +143,16 @@
 
           <div class="step-panel" id="step3">
             <h2 style="font-size:16px; font-weight:800; color:#111827; margin-bottom:16px;">Pilih Metode Pembayaran</h2>
-            <div id="payOptions" style="margin-bottom:20px;"></div>
+            <div id="payOptions" style="margin-bottom:10px;"></div>
+            
+            <div id="areaCashInput" style="display:none; background:#EFF6FF; border:1.5px solid #BFDBFE; border-radius:12px; padding:16px; margin-bottom:20px;">
+              <label style="font-size:13px; font-weight:700; color:#374151;">Nominal Uang dari Pelanggan (Rp)</label>
+              <input type="number" id="inputUangCash" oninput="hitungKembalian()" class="form-control" style="margin-top:8px; height:46px; font-size:16px; font-weight:bold;" placeholder="Masukkan nominal (cth: 100000)">
+              <div style="margin-top:12px; font-size:15px; font-weight:800;">
+                Kembalian: <span id="teksKembalian" style="color:#DC2626;">Rp 0</span>
+              </div>
+            </div>
+
             <div class="card">
               <div class="card-header">Ringkasan Order</div>
               <div style="padding:16px 20px;" id="orderSummary"></div>
@@ -557,8 +566,43 @@
           chk.style.display = 'none';
         }
       });
+      
+      const areaCash = document.getElementById('areaCashInput');
+      if(val === 'Cash') {
+          areaCash.style.display = 'block';
+          hitungKembalian(); // Pancing hitungan
+      } else {
+          areaCash.style.display = 'none';
+          document.getElementById('btnNext').disabled = false; // Buka tombol kalau cashless
+      }
+      
       renderOrderSummary();
-      validateStep();
+      validateStep(); // Update status validasi standar
+    }
+
+    function hitungKembalian() {
+      const uang = parseInt(document.getElementById('inputUangCash').value) || 0;
+      
+      // Ambil total bayar dari fungsi renderOrderSummary
+      const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
+      const selT = Object.keys(selectedTambahan).map(id => ({ ...addons.find(a => a.id_add_on == id), qty: selectedTambahan[id] })).filter(x => x.id_add_on);
+      const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
+      const extraTotal = selT.reduce((s,a) => s + (a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan)), 0) + selA.reduce((s,a) => s + a.tambahan_harga, 0);
+      const grandTotal = cart.reduce((s,i) => s + i.subTotal, 0) + extraTotal;
+
+      const kembalian = uang - grandTotal;
+      const teks = document.getElementById('teksKembalian');
+      const btn = document.getElementById('btnNext');
+
+      if (kembalian < 0) {
+          teks.textContent = "Uang Kurang! Minimal " + formatRupiah(grandTotal);
+          teks.style.color = "#DC2626";
+          btn.disabled = true; // Kunci tombol simpan
+      } else {
+          teks.textContent = formatRupiah(kembalian);
+          teks.style.color = "#15803D";
+          btn.disabled = false; // Buka tombol simpan
+      }
     }
 
     function renderOrderSummary() {
@@ -590,24 +634,24 @@
       btn.disabled = true; btn.textContent = 'Menyimpan...';
       try {
         const totalKgKiloan = cart.filter(i => i.isKiloan).reduce((s,i) => s + i.qty, 0);
-        
         const selT = Object.keys(selectedTambahan).map(id => {
           const a = addons.find(x => x.id_add_on == id);
           return { ...a, qty: selectedTambahan[id] };
         }).filter(x => x.id_add_on);
         
         const selA = [...selectedAntar].map(id => addons.find(a => a.id_add_on === id)).filter(Boolean);
-        
-        const extraTotal = selT.reduce((s,a) => s + (a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan)), 0)
-                         + selA.reduce((s,a) => s + a.tambahan_harga, 0);
-                         
+        const extraTotal = selT.reduce((s,a) => s + (a.tambahan_harga * a.qty * Math.max(1, totalKgKiloan)), 0) + selA.reduce((s,a) => s + a.tambahan_harga, 0);
         const grandTotal = cart.reduce((s,i) => s + i.subTotal, 0) + extraTotal;
+
+        // Ambil uang cash kalau metode Cash
+        const uangCash = metodePembayaran === 'Cash' ? (parseInt(document.getElementById('inputUangCash').value) || 0) : grandTotal;
 
         const result = await api.transaksi.create({
           id_pelanggan:     selectedCustomer.id_pelanggan,
           id_user:          currentUser.id,
           total_bayar:      grandTotal,
           mtd_pembayaran:   metodePembayaran,
+          uang_cash:        uangCash, // <--- INI DATA BARUNYA
           sudah_dibayar:    true,
           items: cart.map(i => ({
             id_layanan:    i.layananId,
@@ -630,9 +674,11 @@
           selT: selT,
           selA: selA,
           total: grandTotal,
-          metode: metodePembayaran
+          metode: metodePembayaran,
+          uang_cash: uangCash // <--- SIMPAN KE GLOBAL BUAT STRUK
         };
 
+        // ... Sisa fungsi saveTransaksi lu di bawah (animasi pindah step dll) biarin aja persis kayak aslinya
         currentStep = TOTAL_STEPS;
         document.getElementById('navBtns').style.display = 'none';
         document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
@@ -674,6 +720,7 @@
       const d = window.lastTrxData;
       if(!d) return;
       const date = new Date().toLocaleString('id-ID');
+      const kembalian = d.uang_cash - d.total;
       
       let itemsHtml = d.cart.map(i => `
         <div style="display:flex; justify-content:space-between;">
@@ -715,8 +762,12 @@
           <span>${formatRupiah(d.total)}</span>
         </div>
         <div style="display:flex; justify-content:space-between;">
-          <span>Metode</span>
-          <span>${d.metode}</span>
+          <span>TUNAI</span>
+          <span>${formatRupiah(d.uang_cash)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>KEMBALIAN</span>
+          <span>${formatRupiah(kembalian)}</span>
         </div>
         <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
         <div style="text-align:center; font-size:10px; margin-top:10px;">

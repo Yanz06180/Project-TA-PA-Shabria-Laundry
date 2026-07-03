@@ -123,12 +123,26 @@ def download_invoice(id_transaksi):
     c.setStrokeColor(colors.lightgrey)
     c.line(15*mm, y_pos - 3*mm, width - 15*mm, y_pos - 3*mm)
     
-    # Total Bayar Asli
+# Total Bayar Asli
     y_pos -= 12*mm
     c.setFont("Courier-Bold", 14)
     c.setFillColor(colors.HexColor("#1565C0"))
     c.drawString(90*mm, y_pos, "TOTAL BAYAR:")
     c.drawRightString(width - 20*mm, y_pos, format_rupiah(trx["total_bayar"]))
+    
+    # --- TAMBAHAN CASH & KEMBALIAN ---
+    uang_cash = int(trx.get("uang_cash") or 0)
+    kembalian = uang_cash - int(trx["total_bayar"])
+    
+    y_pos -= 6*mm
+    c.setFont("Courier", 11)
+    c.setFillColor(colors.black)
+    c.drawString(90*mm, y_pos, "TUNAI/CASH:")
+    c.drawRightString(width - 20*mm, y_pos, format_rupiah(uang_cash))
+    
+    y_pos -= 6*mm
+    c.drawString(90*mm, y_pos, "KEMBALIAN:")
+    c.drawRightString(width - 20*mm, y_pos, format_rupiah(kembalian))
     
     # --- FOOTER ---
     c.setFillColor(colors.grey)
