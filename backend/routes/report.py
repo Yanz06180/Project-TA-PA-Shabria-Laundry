@@ -85,7 +85,7 @@ def send_report():
         # KUNCI UTAMA: Tembak ke server Brevo pake port 587 dan STARTTLS
         try:
             # Pake timeout 15 detik biar aman
-            server = smtplib.SMTP('smtp-relay.brevo.com', 587, timeout=15)
+            server = smtplib.SMTP('smtp-relay.brevo.com', 2525, timeout=15)
             server.starttls() # Wajib dipanggil buat keamanan jalur
             server.login(sender_email, sender_password)
             server.send_message(msg)
