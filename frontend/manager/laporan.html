@@ -452,7 +452,7 @@
         }
       } catch (err) {
         console.error(err);
-        showToast('Gagal terhubung ke server backend', 'error');
+        showToast(err.message || 'Terjadi kesalahan di server', 'error');
       } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
