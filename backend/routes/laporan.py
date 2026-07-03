@@ -71,13 +71,14 @@ def per_kategori():
 @laporan_bp.route("/harian/download", methods=["GET"])
 def download_laporan_harian():
     # Perbaikan: JOIN ke tabel users untuk ambil nama kasir
+    # KUNCI: Pakai DATE_FORMAT buat buang jam, menit, detik dari TiDB!
     sql = """
         SELECT t.id_transaksi, 
                CONCAT(p.pel_first_name, ' ', p.pel_last_name) AS nama_pelanggan, 
                t.total_bayar, 
                t.mtd_pembayaran, 
                CONCAT(u.first_name, ' ', u.last_name) AS kasir_nama, 
-               t.tanggal_masuk 
+               DATE_FORMAT(t.tanggal_masuk, '%%Y-%%m-%%d') AS tanggal_masuk 
         FROM transaksi t
         JOIN pelanggan p ON t.pelanggan_id_pelanggan = p.id_pelanggan
         JOIN users u ON t.users_id_user = u.id_user
@@ -88,7 +89,7 @@ def download_laporan_harian():
     
     si = StringIO()
     cw = csv.writer(si, delimiter=';')
-    cw.writerow(['ID Transaksi', 'Nama Pelanggan', 'Total Bayar', 'Metode Pembayaran', 'Nama Kasir', 'Waktu Transaksi'])
+    cw.writerow(['ID Transaksi', 'Nama Pelanggan', 'Total Bayar', 'Metode Pembayaran', 'Nama Kasir', 'Tanggal Transaksi'])
     
     for row in data:
         cw.writerow([
@@ -96,8 +97,8 @@ def download_laporan_harian():
             row.get('nama_pelanggan', '-'),
             row.get('total_bayar', 0),
             row.get('mtd_pembayaran', '-'),
-            row.get('kasir_nama', '-'), # Sekarang field ini bakal ketemu!
-            row.get('tanggal_masuk', '-')
+            row.get('kasir_nama', '-'), 
+            row.get('tanggal_masuk', '-') # Sekarang isinya cuma YYYY-MM-DD
         ])
             
     output = si.getvalue()

@@ -31,8 +31,8 @@ def send_report():
                 t.id_transaksi AS `ID Transaksi`,
                 CONCAT(p.pel_first_name, ' ', COALESCE(p.pel_last_name, '')) AS `Nama Pelanggan`,
                 p.pel_no_telepon AS `No Telepon`,
-                t.tanggal_masuk AS `Tanggal Masuk`,
-                t.tanggal_keluar AS `Tanggal Keluar`,
+                DATE_FORMAT(t.tanggal_masuk, '%%Y-%%m-%%d') AS `Tanggal Masuk`,
+                DATE_FORMAT(t.tanggal_keluar, '%%Y-%%m-%%d') AS `Tanggal Keluar`,
                 t.total_bayar AS `Total Bayar`,
                 t.mtd_pembayaran AS `Metode Pembayaran`,
                 IF(t.sudah_dibayar = 1, 'Lunas', 'Belum Lunas') AS `Status Pembayaran`
