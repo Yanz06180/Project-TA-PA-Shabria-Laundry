@@ -55,7 +55,7 @@ def send_report():
         excel_buffer.seek(0)
 
         sender_email = "indehausyoo@gmail.com"
-        sender_password = "pxwo yzht gfgf tksk"
+        sender_password = "xtfy phff eegd orxq"
         receiver_email = "adechu121105@gmail.com"
 
         msg = MIMEMultipart()
