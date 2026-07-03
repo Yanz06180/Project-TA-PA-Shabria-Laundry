@@ -64,7 +64,7 @@ def send_report():
         # MASUKIN KUNCI SMTP DARI BREVO DI SINI (BUKAN PASSWORD GMAIL!)
         # GANTI BARIS INI:
         sender_password = os.environ.get("SMTP_BREVO")
-        
+            
         receiver_email = "adechu121105@gmail.com"
 
         msg = MIMEMultipart()
