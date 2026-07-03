@@ -1,11 +1,10 @@
 from flask import Blueprint, jsonify, request
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 import io
 import pandas as pd
+import json
+import base64
+import urllib.request
+import urllib.error
 from db import query
 import os
 
@@ -21,14 +20,14 @@ def send_report():
         if not start_date or not end_date:
             return jsonify({"status": "error", "message": "Filter tanggal tidak boleh kosong"}), 400
 
-        # Kueri dengan format tanggal yang udah disunat biar Excel aman
+        # Kueri lu yang udah aman format tanggalnya
         sql = """
             SELECT 
                 t.id_transaksi AS `ID Transaksi`,
                 CONCAT(p.pel_first_name, ' ', COALESCE(p.pel_last_name, '')) AS `Nama Pelanggan`,
                 p.pel_no_telepon AS `No Telepon`,
-                DATE_FORMAT(t.tanggal_masuk, '%%Y-%%m-%%d') AS `Tanggal Masuk`,
-                DATE_FORMAT(t.est_tanggal_selesai, '%%Y-%%m-%%d') AS `Tanggal Keluar`,
+                DATE_FORMAT(t.tanggal_masuk, '%Y-%m-%d') AS `Tanggal Masuk`,
+                DATE_FORMAT(t.est_tanggal_selesai, '%Y-%m-%d') AS `Tanggal Keluar`,
                 t.total_bayar AS `Total Bayar`,
                 t.mtd_pembayaran AS `Metode Pembayaran`,
                 IF(t.sudah_dibayar = 1, 'Lunas', 'Belum Lunas') AS `Status Pembayaran`
@@ -47,53 +46,55 @@ def send_report():
         if not data_transaksi:
             return jsonify({"status": "error", "message": f"Tidak ada data transaksi pada {period_info}"}), 404
 
+        # Bikin Excel di Memori
         df = pd.DataFrame(data_transaksi)
         excel_buffer = io.BytesIO()
-        
         with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Laporan Keuangan')
         
         excel_buffer.seek(0)
-
-        # ====================================================
-        # KONFIGURASI SMTP RELAY (BREVO)
-        # ====================================================
-        # Email yang lu daftarin di Brevo
-        sender_email = "indehausyoo@gmail.com" 
         
-        # MASUKIN KUNCI SMTP DARI BREVO DI SINI (BUKAN PASSWORD GMAIL!)
-        # GANTI BARIS INI:
-        sender_password = os.environ.get("SMTP_BREVO")
-            
-        receiver_email = "adechu121105@gmail.com"
-
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = receiver_email
-        msg['Subject'] = f"Laporan Transaksi Laundry Shabria ({period_info})"
-
-        body = f"Halo Owner,\n\nBerikut terlampir file spreadsheet laporan transaksi Laundry Shabria untuk {period_info}.\nLaporan ini di-generate otomatis oleh sistem.\n\nTerima kasih."
-        msg.attach(MIMEText(body, 'plain'))
-
+        # KUNCI API BREVO: Ubah Excel jadi base64 biar bisa dikirim lewat JSON API
+        excel_base64 = base64.b64encode(excel_buffer.read()).decode('utf-8')
         filename_excel = f"Laporan_Laundry_{start_date}_to_{end_date}.xlsx"
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(excel_buffer.read())
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', f'attachment; filename="{filename_excel}"')
-        msg.attach(part)
 
-        # KUNCI UTAMA: Tembak ke server Brevo pake port 587 dan STARTTLS
+        # Cek Brankas Railway
+        api_key = os.environ.get("SMTP_BREVO")
+        if not api_key:
+            return jsonify({"status": "error", "message": "Kunci API Brevo (SMTP_BREVO) tidak ditemukan di Railway!"}), 500
+
+        # ====================================================
+        # JURUS PAMUNGKAS: KIRIM VIA HTTP API (BUKAN SMTP)
+        # ====================================================
+        payload = {
+            "sender": {"email": "indehausyoo@gmail.com", "name": "Shabria Laundry"},
+            "to": [{"email": "adechu121105@gmail.com"}],
+            "subject": f"Laporan Transaksi Laundry Shabria ({period_info})",
+            "textContent": f"Halo Owner,\n\nBerikut terlampir file spreadsheet laporan transaksi Laundry Shabria untuk {period_info}.\nLaporan ini di-generate otomatis oleh sistem.\n\nTerima kasih.",
+            "attachment": [{"name": filename_excel, "content": excel_base64}]
+        }
+
+        # Nembak langsung ke server API Brevo via HTTPS (Pasti tembus blokiran Railway)
+        req_api = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                "accept": "application/json",
+                "api-key": api_key,  # Kunci SMTP Brevo lu berfungsi juga sebagai API Key!
+                "content-type": "application/json"
+            },
+            method="POST"
+        )
+
         try:
-            # Pake timeout 15 detik biar aman
-            server = smtplib.SMTP('smtp-relay.brevo.com', 2525, timeout=15)
-            server.starttls() # Wajib dipanggil buat keamanan jalur
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-            server.quit()
-        except smtplib.SMTPAuthenticationError:
-            return jsonify({"status": "error", "message": "Gagal login SMTP Brevo! Cek lagi email dan Kunci SMTP lu."}), 500
+            # Kasih waktu 15 detik buat ngirim
+            with urllib.request.urlopen(req_api, timeout=15) as response:
+                pass # Kalau masuk sini berarti sukses terkirim!
+        except urllib.error.HTTPError as e:
+            err_msg = e.read().decode('utf-8')
+            return jsonify({"status": "error", "message": f"Ditolak API Brevo: {err_msg}"}), 500
         except Exception as e:
-            return jsonify({"status": "error", "message": f"Gagal kirim email: {str(e)}"}), 500
+            return jsonify({"status": "error", "message": f"Gagal konek ke API Brevo: {str(e)}"}), 500
 
         return jsonify({"status": "success", "message": f"Laporan berhasil dikirim ke email owner!"}), 200
 
