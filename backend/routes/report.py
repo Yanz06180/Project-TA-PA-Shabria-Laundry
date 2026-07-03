@@ -54,8 +54,15 @@ def send_report():
         
         excel_buffer.seek(0)
 
-        sender_email = "indehausyoo@gmail.com"
-        sender_password = "xtfy phff eegd orxq"
+        # ====================================================
+        # KONFIGURASI SMTP RELAY (BREVO)
+        # ====================================================
+        # Email yang lu daftarin di Brevo
+        sender_email = "indehausyoo@gmail.com" 
+        
+        # MASUKIN KUNCI SMTP DARI BREVO DI SINI (BUKAN PASSWORD GMAIL!)
+        sender_password = "xsmtpsib-fdbad16db01586b33859af496cf95057bc0c73e6c40b9cb06ccd88338422634f-ZpE2PxNMlNJs4bYy" 
+        
         receiver_email = "adechu121105@gmail.com"
 
         msg = MIMEMultipart()
@@ -73,15 +80,16 @@ def send_report():
         part.add_header('Content-Disposition', f'attachment; filename="{filename_excel}"')
         msg.attach(part)
 
-        # KUNCI UTAMA: Kirim sinkron, tapi pakai SSL port 465 dan Timeout ketat 10 Detik!
+        # KUNCI UTAMA: Tembak ke server Brevo pake port 587 dan STARTTLS
         try:
-            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+            # Pake timeout 15 detik biar aman
+            server = smtplib.SMTP('smtp-relay.brevo.com', 587, timeout=15)
+            server.starttls() # Wajib dipanggil buat keamanan jalur
             server.login(sender_email, sender_password)
             server.send_message(msg)
             server.quit()
         except smtplib.SMTPAuthenticationError:
-            # Ini yang bakal nongol kalau Google ngeblokir akses lu!
-            return jsonify({"status": "error", "message": "Gagal login Gmail! Password App salah atau diblokir Google karena IP Server asing."}), 500
+            return jsonify({"status": "error", "message": "Gagal login SMTP Brevo! Cek lagi email dan Kunci SMTP lu."}), 500
         except Exception as e:
             return jsonify({"status": "error", "message": f"Gagal kirim email: {str(e)}"}), 500
 
