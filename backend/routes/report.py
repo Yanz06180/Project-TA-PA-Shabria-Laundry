@@ -7,6 +7,7 @@ from email import encoders
 import io
 import pandas as pd
 from db import query
+import os
 
 report_bp = Blueprint('report', __name__)
 
@@ -61,7 +62,8 @@ def send_report():
         sender_email = "indehausyoo@gmail.com" 
         
         # MASUKIN KUNCI SMTP DARI BREVO DI SINI (BUKAN PASSWORD GMAIL!)
-        sender_password = "xsmtpsib-fdbad16db01586b33859af496cf95057bc0c73e6c40b9cb06ccd88338422634f-ZpE2PxNMlNJs4bYy" 
+        # GANTI BARIS INI:
+        sender_password = os.environ.get("SMTP_BREVO")
         
         receiver_email = "adechu121105@gmail.com"
 
