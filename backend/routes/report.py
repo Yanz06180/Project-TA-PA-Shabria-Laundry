@@ -6,23 +6,9 @@ from email.mime.base import MIMEBase
 from email import encoders
 import io
 import pandas as pd
-import threading # <-- KUNCI BIAR NGEBUT
 from db import query
 
 report_bp = Blueprint('report', __name__)
-
-# FUNGSI BACKGROUND: Biar API gak nungguin email kelar dikirim
-def send_email_async(msg, sender_email, sender_password):
-    try:
-        # Pake SMTP_SSL port 465 (lebih stabil) dan kasih TIMEOUT 15 detik biar ga gantung 2 menit!
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=15)
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        print("✅ [BACKGROUND] Email laporan berhasil dikirim!")
-    except Exception as e:
-        print(f"❌ [BACKGROUND] Gagal kirim email: {e}")
-
 
 @report_bp.route('/api/send-report', methods=['POST'])
 def send_report():
@@ -34,7 +20,7 @@ def send_report():
         if not start_date or not end_date:
             return jsonify({"status": "error", "message": "Filter tanggal tidak boleh kosong"}), 400
 
-        # Kueri udah aman, nama kolom udah bener
+        # Kueri dengan format tanggal yang udah disunat biar Excel aman
         sql = """
             SELECT 
                 t.id_transaksi AS `ID Transaksi`,
@@ -68,7 +54,6 @@ def send_report():
         
         excel_buffer.seek(0)
 
-        # AKUN EMAIL LU
         sender_email = "indehausyoo@gmail.com"
         sender_password = "pxwo yzht gfgf tksk"
         receiver_email = "adechu121105@gmail.com"
@@ -88,12 +73,19 @@ def send_report():
         part.add_header('Content-Disposition', f'attachment; filename="{filename_excel}"')
         msg.attach(part)
 
-        # KUNCI UTAMA: Bikin Thread baru buat ngirim email, API langsung lanjut tanpa nunggu email terkirim!
-        email_thread = threading.Thread(target=send_email_async, args=(msg, sender_email, sender_password))
-        email_thread.start()
+        # KUNCI UTAMA: Kirim sinkron, tapi pakai SSL port 465 dan Timeout ketat 10 Detik!
+        try:
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            server.quit()
+        except smtplib.SMTPAuthenticationError:
+            # Ini yang bakal nongol kalau Google ngeblokir akses lu!
+            return jsonify({"status": "error", "message": "Gagal login Gmail! Password App salah atau diblokir Google karena IP Server asing."}), 500
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Gagal kirim email: {str(e)}"}), 500
 
-        # Balikkin 200 OK secara INSTAN!
-        return jsonify({"status": "success", "message": f"Laporan sedang diproses dan akan segera masuk ke email owner!"}), 200
+        return jsonify({"status": "success", "message": f"Laporan berhasil dikirim ke email owner!"}), 200
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
