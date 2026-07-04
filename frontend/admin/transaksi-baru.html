@@ -123,7 +123,11 @@
               </div>
               <textarea id="catatanInput" placeholder="Catatan (opsional)..." rows="2"
                 style="width:100%; resize:none; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:12px; padding:10px 14px; font-size:13px; outline:none;"></textarea>
+              
+              <button onclick="addToCart()" class="btn btn-primary" style="width:100%; margin-top:16px; height:44px; font-size:14px;">🛒 Masukin Keranjang</button>
             </div>
+
+            <div id="cartSection" style="display:none; margin-top:20px;"></div>
 
             <div id="cartSection" style="display:none;"></div>
           </div>
@@ -422,6 +426,7 @@
       const sec = document.getElementById('cartSection');
       if (cart.length === 0) { sec.style.display = 'none'; return; }
       sec.style.display = 'block';
+      
       sec.innerHTML = `
         <div style="background:white; border-radius:18px; padding:16px 18px; box-shadow:0 2px 8px rgba(0,0,0,0.07); border:1.5px solid #BFDBFE; margin-bottom:10px;">
           <p style="font-size:13px; font-weight:700; color:#1565C0; margin-bottom:12px;">🛒 Keranjang (${cart.length} layanan)</p>
@@ -439,9 +444,7 @@
             <span style="color:#1565C0;">${formatRupiah(cart.reduce((s,i)=>s+i.subTotal,0))}</span>
           </div>
         </div>
-        <button onclick="addToCart()" style="width:100%; height:44px; border-radius:12px; background:white; border:1.5px solid #1565C0; color:#1565C0; font-size:13px; font-weight:700; cursor:pointer;" ${pendingLayanan?'':'style="opacity:0.5; pointer-events:none;"'}>
-          ＋ Tambah Layanan Lain
-        </button>`;
+        <p style="font-size:12px; color:#6B7280; text-align:center; margin-top:8px;">💡 Pilih menu di atas lagi untuk menambah layanan lain.</p>`;
     }
 
     function removeFromCart(i) {
@@ -719,61 +722,92 @@
     function cetakStruk() {
       const d = window.lastTrxData;
       if(!d) return;
-      const date = new Date().toLocaleString('id-ID');
+      
+      // Bikin format tanggal lebih rapi dan detail sampai ke menit
+      const date = new Date().toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
       const kembalian = d.uang_cash - d.total;
       
+      // Format list item yang lebih profesional (Nama item tebal di atas, harga di bawahnya)
       let itemsHtml = d.cart.map(i => `
-        <div style="display:flex; justify-content:space-between;">
-          <span>${i.nama}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <span>${i.qty}x @${formatRupiah(i.harga)}</span>
-          <span>${formatRupiah(i.subTotal)}</span>
+        <div style="margin-bottom: 8px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase;">${i.nama}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #111;">
+            <span>${i.qty}x ${formatRupiah(i.harga)}</span>
+            <span>${formatRupiah(i.subTotal)}</span>
+          </div>
         </div>
       `).join('');
 
       d.selT.forEach(a => {
-        itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>${a.qty}x ${a.add_nama}</span><span>${formatRupiah(a.tambahan_harga * a.qty)}</span></div>`;
+        itemsHtml += `
+        <div style="margin-bottom: 8px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase;">[*] ${a.add_nama}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #111;">
+            <span>${a.qty}x ${formatRupiah(a.tambahan_harga)}</span>
+            <span>${formatRupiah(a.tambahan_harga * a.qty)}</span>
+          </div>
+        </div>`;
       });
       d.selA.forEach(a => {
-        itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>${a.add_nama}</span><span>${formatRupiah(a.tambahan_harga)}</span></div>`;
+        itemsHtml += `
+        <div style="margin-bottom: 8px;">
+          <div style="font-weight: 800; font-size: 11px; text-transform: uppercase;">[🚚] ${a.add_nama}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #111;">
+            <span>1x ${formatRupiah(a.tambahan_harga)}</span>
+            <span>${formatRupiah(a.tambahan_harga)}</span>
+          </div>
+        </div>`;
       });
 
+      // Garis pembatas ala struk thermal sungguhan
+      const dashedLine = `<div style="border-bottom: 1.5px dashed #000; margin: 10px 0;"></div>`;
+      const solidLine  = `<div style="border-bottom: 1.5px solid #000; margin: 10px 0;"></div>`;
+
+      // Rombak total layout HTML-nya
       const html = `
-        <div style="text-align:center; margin-bottom:10px;">
-          <img src="../assets/Logo.jpeg" style="width: 40mm; height: auto; margin-bottom: 8px; object-fit: contain; filter: grayscale(100%);">
-          <h2 style="margin:0; font-size:16px;">SHABRIA LAUNDRY</h2>
-          <p style="margin:0; font-size:10px;">Jl. Raya Salatiga No. 123</p>
-          <p style="margin:0; font-size:10px;">Telp: 08123456789</p>
-          <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
+        <div style="text-align:center; margin-bottom:12px;">
+          <h2 style="margin:0; font-size:22px; font-weight:900; letter-spacing:1px; line-height:1.2;">SHABRIA</h2>
+          <h3 style="margin:0; font-size:16px; font-weight:900; letter-spacing:2px; line-height:1.2;">LAUNDRY</h3>
+          <p style="margin:6px 0 0 0; font-size:10px; font-weight:700;">Jl. Raya Salatiga No. 123</p>
+          <p style="margin:2px 0 0 0; font-size:10px; font-weight:700;">Telp: 08123456789</p>
         </div>
-        <div style="margin-bottom:10px;">
-          <p style="margin:0;">No   : ${d.id}</p>
-          <p style="margin:0;">Tgl  : ${date}</p>
-          <p style="margin:0;">Cust : ${d.customer.pel_first_name} ${d.customer.pel_last_name}</p>
-          <p style="margin:0;">Kasir: ${currentUser.nama}</p>
-          <p style="margin:0;">Status: <b>ANTREAN</b></p>
-        </div>
-        <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
+        
+        ${dashedLine}
+        
+        <table style="width:100%; font-size:10px; font-weight:700; border-collapse:collapse; margin-bottom:4px;">
+          <tr><td style="width:50px; padding-bottom:3px;">NOTA</td><td style="padding-bottom:3px;">: ${d.id}</td></tr>
+          <tr><td style="padding-bottom:3px;">TANGGAL</td><td style="padding-bottom:3px;">: ${date}</td></tr>
+          <tr><td style="padding-bottom:3px;">CUST</td><td style="padding-bottom:3px;">: ${d.customer.pel_first_name} ${d.customer.pel_last_name}</td></tr>
+          <tr><td style="padding-bottom:3px;">KASIR</td><td style="padding-bottom:3px;">: ${currentUser.nama}</td></tr>
+        </table>
+        
+        ${solidLine}
         ${itemsHtml}
-        <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
-        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px;">
+        ${solidLine}
+        
+        <div style="display:flex; justify-content:space-between; font-weight:900; font-size:14px; margin-bottom:6px;">
           <span>TOTAL</span>
           <span>${formatRupiah(d.total)}</span>
         </div>
-        <div style="display:flex; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:4px; color:#333;">
+          <span>METODE</span>
+          <span>${d.metode.toUpperCase()}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:4px; color:#333;">
           <span>TUNAI</span>
           <span>${formatRupiah(d.uang_cash)}</span>
         </div>
-        <div style="display:flex; justify-content:space-between;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:#333;">
           <span>KEMBALIAN</span>
           <span>${formatRupiah(kembalian)}</span>
         </div>
-        <hr style="border-top:1px dashed black; border-bottom:none; margin:5px 0;">
-        <div style="text-align:center; font-size:10px; margin-top:10px;">
-          <p style="margin:0;">Terima kasih atas</p>
-          <p style="margin:0;">kepercayaan Anda!</p>
-          <p style="margin:5px 0 0 0;">Cucian bersih, hati tenang.</p>
+        
+        ${dashedLine}
+        
+        <div style="text-align:center; margin-top:14px;">
+          <p style="margin:0; font-size:13px; font-weight:900;">TERIMA KASIH</p>
+          <p style="margin:4px 0 0 0; font-size:10px; font-weight:700;">Atas Kepercayaan Anda!</p>
+          <p style="margin:4px 0 0 0; font-size:10px; font-weight:700; font-style:italic;">Cucian Bersih, Hati Tenang.</p>
         </div>
       `;
       
