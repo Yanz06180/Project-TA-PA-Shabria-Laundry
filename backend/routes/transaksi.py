@@ -125,7 +125,7 @@ def create():
     tot = int(d["total_bayar"])
     uang_cash = tot if mtd.lower() == "cashless" else int(d.get("uang_cash", 0))
     
-    # 1. INSERT TRANSAKSI UTAMA
+    # 1. INSERT TRANSAKSI UTAMA (Cuma 1x Nembak)
     execute(
         """INSERT INTO transaksi
            (id_transaksi, pelanggan_id_pelanggan, users_id_user,
@@ -136,37 +136,46 @@ def create():
          mtd, int(d.get("sudah_dibayar", 1)), uang_cash)
     )
 
-    # 2. AMBIL SEMUA HARGA ADDON SEKALIGUS DI AWAL (Anti N+1 Query)
-    semua_addon = query("SELECT id_add_on, tambahan_harga FROM add_on")
-    harga_addon_map = {a["id_add_on"]: a["tambahan_harga"] for a in semua_addon}
+    items = d.get("items", [])
+    if items:
+        # 2. BUNGKUS SEMUA ITEM JADI 1 KUERI (True Bulk Insert - Anti Lemot)
+        item_values = []
+        item_params = []
+        for item in items:
+            item_values.append("(%s, %s, %s, %s, 'Antrean', %s, %s, %s)")
+            item_params.extend([
+                tid, d["id_pelanggan"], item["id_layanan"], item["sub_harga"],
+                item.get("jumlah_barang", 1), item.get("berat_barang", 0), item.get("catatan", "")
+            ])
+            
+        # Tembak semua item sekaligus! (Cuma 1x Nembak, bukan 7x!)
+        query_items = f"""
+            INSERT INTO detail_transaksi 
+            (transaksi_id_transaksi, pelanggan_id_pelanggan, layanan_id_layanan, 
+             sub_harga, status_pengerjaan, jumlah_barang, berat_barang, catatan) 
+            VALUES {','.join(item_values)}
+        """
+        # first_did akan otomatis dapet ID Auto Increment dari item PERTAMA
+        first_did = execute(query_items, tuple(item_params))
 
-    # 3. LOOPING ITEM & BULK INSERT ADDON
-    for item in d.get("items", []):
-        did = execute(
-            """INSERT INTO detail_transaksi
-               (transaksi_id_transaksi, pelanggan_id_pelanggan,
-                layanan_id_layanan, sub_harga, status_pengerjaan,
-                jumlah_barang, berat_barang, catatan)
-               VALUES (%s,%s,%s,%s,'Antrean',%s,%s,%s)""",
-            (tid, d["id_pelanggan"], item["id_layanan"], item["sub_harga"],
-             item.get("jumlah_barang", 1), item.get("berat_barang", 0),
-             item.get("catatan", ""))
-        )
-        
-        # Kumpulin addon untuk item ini buat dibarengin
-        addon_values = []
-        addon_params = []
-        for ao_req in item.get("addons", []):
-            addon_id = ao_req["id"]
-            harga = harga_addon_map.get(addon_id)
-            if harga is not None:
-                addon_values.append("(%s, %s, %s, %s)")
-                addon_params.extend([did, addon_id, harga, ao_req["qty"]])
-        
-        # Eksekusi Bulk Insert Addon (Sekali tembak per item!)
-        if addon_values:
-            q = f"INSERT INTO detail_addon (id_detail, add_on_id_add_on, harga_saat_itu, jumlah_addon) VALUES {','.join(addon_values)}"
-            execute(q, tuple(addon_params))
+        # 3. INSERT ADDON (Nempel ke item pertama aja)
+        addons_to_insert = items[0].get("addons", [])
+        if addons_to_insert:
+            semua_addon = query("SELECT id_add_on, tambahan_harga FROM add_on")
+            harga_addon_map = {a["id_add_on"]: a["tambahan_harga"] for a in semua_addon}
+
+            addon_values = []
+            addon_params = []
+            for ao_req in addons_to_insert:
+                addon_id = ao_req["id"]
+                harga = harga_addon_map.get(addon_id)
+                if harga is not None:
+                    addon_values.append("(%s, %s, %s, %s)")
+                    addon_params.extend([first_did, addon_id, harga, ao_req["qty"]])
+
+            if addon_values:
+                q = f"INSERT INTO detail_addon (id_detail, add_on_id_add_on, harga_saat_itu, jumlah_addon) VALUES {','.join(addon_values)}"
+                execute(q, tuple(addon_params))
 
     sig = sign_trx(tid)
     return jsonify({"id_transaksi": tid, "signature": sig}), 201
