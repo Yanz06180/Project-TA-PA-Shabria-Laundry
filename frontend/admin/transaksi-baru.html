@@ -654,18 +654,22 @@
           id_user:          currentUser.id,
           total_bayar:      grandTotal,
           mtd_pembayaran:   metodePembayaran,
-          uang_cash:        uangCash, // <--- INI DATA BARUNYA
+          uang_cash:        uangCash, // Tetep ada, aman!
           sudah_dibayar:    true,
-          items: cart.map(i => ({
+          
+          // JURUS SAKTI ANTI LOADING LAMA:
+          items: cart.map((i, index) => ({
             id_layanan:    i.layananId,
             sub_harga:     i.subTotal,
             jumlah_barang: i.isKiloan ? 1 : i.qty,
             berat_barang:  i.isKiloan ? i.qty : 0,
             catatan:       i.catatan || '',
-            addons: [
+            
+            // Addon cuma nempel di item pertama (index 0) biar gak duplikat dikali lipat!
+            addons: index === 0 ? [
               ...Object.keys(selectedTambahan).map(id => ({ id: Number(id), qty: selectedTambahan[id] })),
               ...[...selectedAntar].map(id => ({ id: Number(id), qty: 1 }))
-            ],
+            ] : [],
           })),
         });
 

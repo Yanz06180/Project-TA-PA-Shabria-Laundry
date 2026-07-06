@@ -121,13 +121,11 @@ def create():
     d   = request.get_json()
     tid = gen_id()
     
-    # --- LOGIKA UANG CASH BARU ---
     mtd = d["mtd_pembayaran"]
     tot = int(d["total_bayar"])
-    # Kalau Cashless otomatis uang_cash disamain kayak total bayar
     uang_cash = tot if mtd.lower() == "cashless" else int(d.get("uang_cash", 0))
     
-    # Insert ke tabel transaksi (sudah ditambah uang_cash)
+    # 1. INSERT TRANSAKSI UTAMA
     execute(
         """INSERT INTO transaksi
            (id_transaksi, pelanggan_id_pelanggan, users_id_user,
@@ -138,6 +136,11 @@ def create():
          mtd, int(d.get("sudah_dibayar", 1)), uang_cash)
     )
 
+    # 2. AMBIL SEMUA HARGA ADDON SEKALIGUS DI AWAL (Anti N+1 Query)
+    semua_addon = query("SELECT id_add_on, tambahan_harga FROM add_on")
+    harga_addon_map = {a["id_add_on"]: a["tambahan_harga"] for a in semua_addon}
+
+    # 3. LOOPING ITEM & BULK INSERT ADDON
     for item in d.get("items", []):
         did = execute(
             """INSERT INTO detail_transaksi
@@ -149,16 +152,21 @@ def create():
              item.get("jumlah_barang", 1), item.get("berat_barang", 0),
              item.get("catatan", ""))
         )
+        
+        # Kumpulin addon untuk item ini buat dibarengin
+        addon_values = []
+        addon_params = []
         for ao_req in item.get("addons", []):
             addon_id = ao_req["id"]
-            qty      = ao_req["qty"]
-            
-            ao = query("SELECT tambahan_harga FROM add_on WHERE id_add_on=%s", (addon_id,), fetchall=False)
-            if ao:
-                execute(
-                    "INSERT INTO detail_addon (id_detail, add_on_id_add_on, harga_saat_itu, jumlah_addon) VALUES (%s,%s,%s,%s)",
-                    (did, addon_id, ao["tambahan_harga"], qty)
-                )
+            harga = harga_addon_map.get(addon_id)
+            if harga is not None:
+                addon_values.append("(%s, %s, %s, %s)")
+                addon_params.extend([did, addon_id, harga, ao_req["qty"]])
+        
+        # Eksekusi Bulk Insert Addon (Sekali tembak per item!)
+        if addon_values:
+            q = f"INSERT INTO detail_addon (id_detail, add_on_id_add_on, harga_saat_itu, jumlah_addon) VALUES {','.join(addon_values)}"
+            execute(q, tuple(addon_params))
 
     sig = sign_trx(tid)
     return jsonify({"id_transaksi": tid, "signature": sig}), 201
