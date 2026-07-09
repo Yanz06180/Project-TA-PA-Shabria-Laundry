@@ -20,12 +20,29 @@ def get_jenis():
 # 🌟 TAMBAHAN BARU: API buat nambahin Katalog/Jenis dari Modal
 @layanan_bp.route("/jenis", methods=["POST"])
 def create_jenis():
-    d = request.get_json()
-    jid = execute(
-        "INSERT INTO jenis_barang (jenis_nama) VALUES (%s)",
-        (d["jenis_nama"],)
-    )
-    return jsonify({"id_jenis_barang": jid, "message": "Katalog berhasil dibuat"}), 201
+    try:
+        # Ambil data JSON, kalau kosong (None) jadikan dictionary kosong {}
+        d = request.get_json() or {}
+        
+        # JURUS AMAN: Coba cari key "jenis_nama". Kalau nggak ada, cari key "nama". 
+        nama_katalog = d.get("jenis_nama") or d.get("nama")
+        
+        # Validasi kalau frontend ngirim form kosong
+        if not nama_katalog:
+            return jsonify({"error": "Nama katalog tidak boleh kosong! (Cek script frontend lu)"}), 400
+            
+        jid = execute(
+            "INSERT INTO jenis_barang (jenis_nama) VALUES (%s)",
+            (nama_katalog,)
+        )
+        return jsonify({"id_jenis_barang": jid, "message": "Katalog berhasil dibuat"}), 201
+        
+    except Exception as e:
+        # JURUS PAMUNGKAS: Kalau database lu yang error (misal salah nama tabel/kolom),
+        # server lu NGGAK BAKAL MELEDAK 500 HTML lagi. 
+        # Dia bakal nge-return error aslinya dalam format JSON biar gampang dibaca!
+        print(f"Error Database di create_jenis: {str(e)}")
+        return jsonify({"error": f"Gagal menyimpan ke database: {str(e)}"}), 500
 
 @layanan_bp.route("/<int:id>", methods=["GET"])
 def get_one(id):
