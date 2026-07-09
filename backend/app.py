@@ -9,10 +9,9 @@ from routes.laporan   import laporan_bp
 from routes.addon     import addon_bp
 from routes.user      import user_bp
 from routes.report    import report_bp
-from flask import Flask, request, jsonify
-from db import query, execute # 🌟 WAJIB: Import dari db.py
-import requests # 🌟 WAJIB: Biar bisa nembak API Fonnte
+from flask import Flask
 import config
+import os
 
 
 app = Flask(__name__)
@@ -43,7 +42,6 @@ app.register_blueprint(invoice_bp, url_prefix='/api')
 def health():
     return {"status": "ok"}
 
-import os
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

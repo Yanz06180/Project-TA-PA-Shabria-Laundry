@@ -202,8 +202,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       return (t.detail && t.detail[0]) && t.detail[0].status_pengerjaan === 'Selesai';
     }).length;
     var totalPemasukan   = transaksi.filter(function(t){ return t.sudah_dibayar; })
-                            .reduce(function(s,t){ return s+(t.total_bayar||0); }, 0);
-    var totalPengeluaran = pengeluaran.reduce(function(s,e){ return s+(e.jumlah||0); }, 0);
+                            .reduce(function(s,t){ return s + parseInt(t.total_bayar || 0); }, 0);
+    var totalPengeluaran = pengeluaran.reduce(function(s,e){ return s + parseInt(e.jumlah || 0); }, 0);
     var netProfit        = totalPemasukan - totalPengeluaran;
 
     // KPI
