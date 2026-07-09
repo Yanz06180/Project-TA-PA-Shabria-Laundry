@@ -257,15 +257,20 @@
 
     async function confirmDelete() {
       if (!deleteTargetId) return;
-      try {
-        await api.pelanggan.delete(deleteTargetId);
-        showToast('Customer berhasil dihapus', 'success');
-        document.getElementById('deleteModal').classList.remove('show');
-        await loadCustomers();
-      } catch (err) {
-        showToast('Tidak dapat dihapus', 'error');
-      }
-    }
+        try {
+          await api.pelanggan.delete(deleteTargetId);
+          showToast('Customer berhasil dihapus', 'success');
+          document.getElementById('deleteModal').classList.remove('show');
+          await loadCustomers();
+        } catch (err) {
+          const errMsg = err.message.toLowerCase();
+          if (errMsg.includes('500') || errMsg.includes('foreign') || errMsg.includes('transaksi')) {
+              showToast('Tidak bisa dihapus karena sudah memiliki riwayat transaksi.', 'error');
+          } else {
+              showToast('Tidak dapat dihapus: ' + err.message, 'error');
+          }
+        }
+  }
   </script>
 </body>
 </html>
