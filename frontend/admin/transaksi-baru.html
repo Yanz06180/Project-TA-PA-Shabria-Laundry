@@ -503,8 +503,12 @@
     }
 
     function toggleAntar(id) {
-      if (selectedAntar.has(id)) selectedAntar.delete(id);
-      else selectedAntar.add(id);
+      if (selectedAntar.has(id)) {
+        selectedAntar.delete(id);
+      } else {
+        selectedAntar.clear();
+        selectedAntar.add(id);
+      }
       renderAddons();
       updateExtraSummary();
     }
