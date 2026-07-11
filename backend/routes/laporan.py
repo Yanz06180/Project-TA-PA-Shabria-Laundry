@@ -23,7 +23,7 @@ def get_pengeluaran():
 def add():
     d = request.get_json()
     lid = execute(
-        "INSERT INTO pengeluaran (id_user,deskripsi,jumlah,kategori,tanggal) VALUES (%s,%s,%s,%s,CURDATE())",
+        "INSERT INTO pengeluaran (id_user,deskripsi,jumlah,kategori,tanggal) VALUES (%s,%s,%s,%s,NOW())",
         (d["id_user"], d["deskripsi"], d["jumlah"], d.get("kategori","Operasional"))
     )
     return jsonify({"id": lid}), 201
